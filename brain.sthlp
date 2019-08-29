@@ -143,14 +143,15 @@ r({hi:margin}) matrix of input variables on marginal output signals
 {text}
 
 {title: Update History}
-{p 0 10}{hi:2018.11.21} Initial version.
 
-{p 0 10}{hi:2019.03.22} Implemented {hi:batch} training.{break}
+{p 0 11}{hi:2019.03.22} Implemented {hi:batch} training.{break}
 Changed training ouput to interval reports of real absolute errors instead of intermediate errors.{break}
 {hi:nosort} is now called {hi:noshuffle} as shuffling is now applied before every iteration.{break}
 The {hi:best} option alway picks the best intermediate result in case of alternating errors.{break}
 New command {hi:error} reports the overall absolute error instead of using the {hi:train} command with {hi:iter(0)}.{break}
 {hi:signal} now works as intended.
+
+{p 0 11}{hi:2018.11.21} Initial version.
 
 {title:Author}
 
