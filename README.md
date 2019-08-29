@@ -18,3 +18,6 @@ STATA
 
 2018.11.21 (scc repository version)
 * Initial version
+
+### Author
+* **Thorsten Doherr** - [ZEW](https://www.zew.de/en/team/tdo/)
