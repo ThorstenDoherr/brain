@@ -8,6 +8,10 @@ STATA
 * Copy the provided examples from the help document into do-files and run them
 ## Version history
 
+2019.11.13
+* The commands **train** and **error** support weights.{break}
+* New command **fit** calculates recall and precision for binary output.
+
 2019.03.28
 * Implementation of batch training.
 * Changed training ouput to interval reports of real absolute errors instead of intermediate errors.
