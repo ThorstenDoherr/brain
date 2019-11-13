@@ -1,16 +1,103 @@
 cap program drop brain
 program define brain, rclass
 	version 10.0
-	syntax anything(id="command") [if] [in], [Hidden(numlist)] [INput(varlist)] [Output(varlist)] [ITer(integer 0)] [Eta(real 0.25)] [Spread(real 0.5)] [BAtch(integer 1)] [Report(integer 10)] [BEst] [RAW] [Noshuffle]
+	syntax anything(id="command") [pweight fweight aweight iweight/] [if] [in], [Hidden(numlist)] [INput(varlist)] [Output(varlist)] [ITer(integer 0)] [Eta(real 0.25)] [Spread(real 0.5)] [BAtch(integer 1)] [Report(integer 10)] [BEst] [RAW] [Noshuffle]
 	token `"`anything'"'
 	local raw = "`raw'" != ""
 	local noshuffle = "`noshuffle'" != ""
 	local best = "`best'" != ""
+	if `"`weight'"' != "" {
+		local weight = `"`exp'"'
+	}
 	if length(`"`1'"') < 2 {
 		di as error "invalid brain command"
 		error 999
 	}
+	if `"`1'"' == substr("fit",1,length("`1'")) {
+		if `"`weight'"' != "" {
+			di as error "fit does not allow weights"
+			error 999
+		}
+		tempvar touse pred
+		macro shift
+		local wc = wordcount(`"`*'"')
+		if `wc' > 2 {
+			di as error "too many variables"
+			error 999
+		}
+		if `wc' < 1 {
+			di as error "specify at least the original variable"
+			error 999
+		}
+		forvalues i = 1/`wc' {
+			confirm var ``i''
+		}
+		marksample touse
+		local true = `"`1'"'
+		if `wc' == 1 {
+			if colsof(output) != 1 {
+				di as error "predicted variable can only be omitted for univariate output"
+				error 999
+			}
+			brain think `pred' if `touse'
+		}
+		else {
+			local pred = `"`2'"'
+		}
+		markout `touse' `true' `pred'
+		qui sum `true' if `touse'
+		if r(min) < 0 | r(max) > 1 {
+			di as error "invalid original variable"
+			error 999
+		}
+		qui sum `pred' if `touse'
+		if r(min) < 0 | r(max) > 1 {
+			di as error "invalid predicted variable"
+			error 999
+		}
+		qui count if `touse'
+		local N = r(N)
+		qui count if `touse' & `pred' >= 0.5 & `true' >= 0.5
+		local TP = r(N)
+		qui count if `touse' & `pred' >= 0.5 & `true' < 0.5
+		local FP = r(N)
+		qui count if `touse' & `pred' < 0.5 & `true' < 0.5
+		local TN = r(N)
+		qui count if `touse' & `pred' < 0.5 & `true' >= 0.5
+		local FN = r(N)
+		local Trecall = `TP'/(`TP'+`FN') * 100
+		local Frecall = `TN'/(`TN'+`FP') * 100
+		local Tprecision = `TP'/(`TP'+`FP') * 100
+		local Fprecision = `TN'/(`TN'+`FN') * 100
+		local accuracy = (`TP'+`TN')/(`TP'+`TN'+`FP'+`FN') * 100
+		local fit = string(`accuracy',"%6.2f")
+		local len = 7-length("`fit'")
+		di as text "{hline 11}{c TT}{hline 26}
+		di as text "Acc " as result "`fit'" as text "{dup `len': }{c |}         True        False"
+		di as text "{hline 11}{c +}{hline 26}
+		di as text "Positive   {c |} " as result %12.0f `TP' " " %12.0f `FP'
+		di as text "Negative   {c |} " as result %12.0f `TN' " " %12.0f `FN'
+		di as text "{hline 11}{c +}{hline 26}
+		di as text "Recall     {c |} " as result %12.2fc `Trecall' " " %12.2fc `Frecall' 
+		di as text "Precision  {c |} " as result %12.2fc `Tprecision' " " %12.2fc `Fprecision' 
+		di as text "{hline 11}{c BT}{hline 26}
+		return scalar accuracy = `accuracy'
+		return scalar Fprecision = `Fprecision'
+		return scalar Tprecision = `Tprecision'
+		return scalar Frecall = `Frecall'
+		return scalar Trecall = `Trecall'
+		return scalar FN = `FN'
+		return scalar TN = `TN'
+		return scalar FP = `FP'
+		return scalar TP = `TP'
+		return scalar N = `N'
+		exit
+	}
 	if `"`1'"' == substr("define",1,length(`"`1'"')) {
+		if `"`weight'"' != "" {
+			di as error "define does not allow weights"
+			error 999
+		}
 		if `"`input'"' == "" {
 			di as error "no input variables specified"
 			error 999
@@ -83,6 +170,10 @@ program define brain, rclass
 		exit
 	}
 	if `"`1'"' == substr("save",1,length("`1'")) {
+		if `"`weight'"' != "" {
+			di as error "save does not allow weights"
+			error 999
+		}
 		if `"`2'"' == "" {
 			di as error "no file specified"
 			error 999
@@ -144,6 +235,10 @@ program define brain, rclass
 		exit
 	}
 	if "`1'" == substr("load",1,length("`1'")) {
+		if `"`weight'"' != "" {
+			di as error "load does not allow weights"
+			error 999
+		}
 		if `"`2'"' == "" {
 			di as error "no file specified"
 			error 999
@@ -226,6 +321,10 @@ program define brain, rclass
 		exit
 	}
 	if `"`1'"' == substr("feed",1,length("`1'")) {
+		if `"`weight'"' != "" {
+			di as error "feed does not allow weights"
+			error 999
+		}
 		macro shift
 		tempname output
 		local isize = colsof(input)
@@ -271,6 +370,10 @@ program define brain, rclass
 		exit
 	}
 	if `"`1'"' == substr("signal",1,length("`1'")) {
+		if `"`weight'"' != "" {
+			di as error "signal does not allow weights"
+			error 999
+		}
 		macro shift
 		tempname signal
 		local isize = colsof(input)
@@ -298,7 +401,7 @@ program define brain, rclass
 	}
 	if `"`1'"' == substr("margin",1,length("`1'")) {
 		tempname signal 
-		tempvar delta touse
+		tempvar delta touse w
 		macro shift
 		local inames : colnames input
 		local onames : colnames output
@@ -322,10 +425,11 @@ program define brain, rclass
 				local msize = `msize'+1
 			}
 		}
-		marksample touse
+		marksample touse    
 		qui des, varlist
 		local names = r(varlist)
 		markout `touse' `inames' `onames'
+		brainweight `w' `touse' `weight'
 		local bnames = ""
 		forvalue o = 1/`osize' {
 			tempvar signal`o' base`o'
@@ -335,7 +439,7 @@ program define brain, rclass
 			local bnames = "`bnames' `base`o''"
 		}
 		qui gen double `delta' = .
-		matrix `signal' = J(`msize',`osize',0)
+		matrix `signal' = J(`msize',`osize', 0)
 		matrix rownames `signal' = `mnames'
 		local cnames = ""
 		forvalue o = 1/`osize' {
@@ -358,7 +462,7 @@ program define brain, rclass
 					forvalue o = 1/`osize' {
 						local oname = word("`onames'", `o')
 						qui replace `delta' = `base`o''-`signal`o'' if `touse'
-						qui sum `delta' if `touse'
+						qui sum `delta' [aweight=`w'] if `touse'
 						matrix `signal'[`ind',`o'] = r(mean)
 					}
 					continue, break
@@ -372,6 +476,10 @@ program define brain, rclass
 		exit
 	}
 	if `"`1'"' == substr("think",1,length("`1'")) {
+		if `"`weight'"' != "" {
+			di as error "think does not allow weights"
+			error 999
+		}
 		tempvar touse
 		macro shift
 		local wc = wordcount(`"`*'"')
@@ -384,7 +492,7 @@ program define brain, rclass
 			cap drop `v'
 			qui gen double `v' = .
 		}
-		marksample touse
+		marksample touse    
 		qui des, varlist
 		local names = r(varlist)
 		local inames : colnames input
@@ -395,14 +503,15 @@ program define brain, rclass
 		exit
 	}
 	if `"`1'"' == substr("error",1,length("`1'")) {
-		tempvar touse
-		marksample touse
+		tempvar touse w
+		marksample touse    
 		qui des, varlist
 		local names = r(varlist)
 		local inames : colnames input
 		local onames : colnames output
 		markout `touse' `inames' `onames'
-		order `inames' `onames'
+		brainweight `w' `touse' `weight'
+		order `inames' `onames' `w'
 		mata: brainerror()
 		local err = r(error)
 		local N = r(N)
@@ -414,7 +523,7 @@ program define brain, rclass
 		exit
 	}
 	if `"`1'"' == substr("train",1,length("`1'")) {
-		tempvar touse
+		tempvar touse w
 		tempname bestbrain
 		if `eta' <= 0 {
 			di as error "eta has to be a number larger than zero"
@@ -428,15 +537,16 @@ program define brain, rclass
 			di as error "batch size has to be larger than zero"
 			error 999
 		}
-		marksample touse
+		marksample touse    
 		qui des, varlist
 		local names = r(varlist)
 		local inames : colnames input
 		local onames : colnames output
 		markout `touse' `inames' `onames'
+		brainweight `w' `touse' `weight'
 		qui count if `touse'
 		local N = r(N)
-		order `inames' `onames' `touse'
+		order `inames' `onames' `w' `touse'
 		local err = 0
 		local prev = .
 		di as text "{hline 40}" 
@@ -574,6 +684,27 @@ program define braininit
 	}
 end	
 
+cap program drop brainweight
+program define brainweight
+	local w = "`1'"
+	local touse = "`2'"
+	local exp = "`3'"
+	if `"`exp'"' == "" {
+		qui gen byte `w' = 1
+	}
+	else {
+		qui gen `w' = `exp' if `touse'
+		qui sum `w'
+		local min = r(min)
+		local max = r(max)
+		if r(min) < 0 {
+			di as error "negative weights not allowed"
+			error 999
+		}
+		qui replace `w' = `w'/`max'
+	}
+end
+
 mata:
 
 void input2neuron(real matrix input, real matrix neuron)
@@ -668,7 +799,7 @@ void brainthink()
 void brainerror()
 {	real matrix neuron, layer, brain, input, output
 	real matrix D
-	real scalar obs, ncol, ocol, icol, error, N
+	real scalar obs, ncol, ocol, icol, error, N, weight, wsum
 	layer = st_matrix("layer")
 	neuron = st_matrix("neuron")
 	brain = st_matrix("brain")
@@ -677,24 +808,27 @@ void brainerror()
 	ncol = cols(neuron)
 	ocol = cols(output)	
 	icol = cols(input)
-	st_view(D=.,.,(1..icol+ocol),st_varname(icol+ocol+1)[1])
+	st_view(D=.,.,(1..icol+ocol+1),st_varname(icol+ocol+2)[1])
 	N = rows(D)
 	error = 0
+	wsum = 0
 	for (obs = 1; obs <= N; obs++)
 	{	input[3,.] = D[obs,1..icol]
 		output[3,.] = D[obs,icol+1..icol+ocol]
+		weight = D[obs,icol+ocol+1]
 		input2neuron(input, neuron)
 		output2neuron(output)
 		brainforw(layer, neuron, brain)
-		error = error+sum(abs(output[4, .] :- neuron[1, ncol-ocol+1..ncol]))
+		error = error + sum(abs(output[4, .] :- neuron[1, ncol-ocol+1..ncol])) * weight
+		wsum = wsum + weight
 	}
-	error = error/N/ocol
+	error = error/wsum/ocol
 	st_rclear()
 	st_numscalar("r(error)", error)
 	st_numscalar("r(N)", N)
 }
 
-real matrix brainbackw(real matrix output, real matrix layer, real matrix neuron, real matrix brain)
+real matrix brainbackw(real matrix output, real matrix layer, real matrix neuron, real matrix brain, real scalar weight)
 {	real matrix delta, err, diff, sub
 	real scalar dpos, wpos, npos, lay, sum
 	real scalar n, l
@@ -702,7 +836,7 @@ real matrix brainbackw(real matrix output, real matrix layer, real matrix neuron
 	ncol = cols(neuron)
 	ocol = cols(output)
 	npos = ncol-ocol
-	err = output[4, .] :- neuron[1, npos+1..ncol]
+	err = (output[4, .] :- neuron[1, npos+1..ncol]) :* weight
 	diff = (J(1, ncol-layer[1,1],1) :- neuron[1, layer[1,1]+1..ncol]) :* neuron[1, layer[1,1]+1..ncol]
 	dcol = cols(diff)
 	delta = err :* diff[1, dcol-ocol+1..dcol]
@@ -747,7 +881,7 @@ real matrix brainbackw(real matrix output, real matrix layer, real matrix neuron
 void braintrain(real scalar eta, real scalar batch, real scalar iter, real scalar shuffle)
 {	real matrix neuron, layer, brain, input, output, err
 	real matrix touse, D
-	real scalar obs, icol, ocol, b, i, N
+	real scalar obs, icol, ocol, b, i, N, weight
 	layer = st_matrix("layer")
 	neuron = st_matrix("neuron")
 	brain = st_matrix("brain")
@@ -755,7 +889,7 @@ void braintrain(real scalar eta, real scalar batch, real scalar iter, real scala
 	input = st_matrix("input")
 	icol = cols(input)
 	ocol = cols(output)
-	st_view(D=.,.,(1..icol+ocol),st_varname(icol+ocol+1)[1])
+	st_view(D=.,.,(1..icol+ocol+1),st_varname(icol+ocol+2)[1])
 	N = rows(D)
 	b = 0
 	for (i = 1; i <= iter; i++)
@@ -765,14 +899,15 @@ void braintrain(real scalar eta, real scalar batch, real scalar iter, real scala
 		for (obs = 1; obs <= N; obs++)
 		{	input[3,.] = D[obs,1..icol]
 			output[3,.] = D[obs,icol+1..icol+ocol]
+			weight = D[obs,icol+ocol+1]
 			input2neuron(input, neuron)
 			output2neuron(output)
 			brainforw(layer, neuron, brain)
 			if (b == 0)
-			{	err = brainbackw(output, layer, neuron, brain)
+			{	err = brainbackw(output, layer, neuron, brain, weight)
 			}
 			else
-			{	err = err :+ brainbackw(output, layer, neuron, brain)
+			{	err = err :+ brainbackw(output, layer, neuron, brain, weight)
 			}
 			b++
 			if (b >= batch | obs == N)
