@@ -9,7 +9,7 @@ STATA
 ## Version history
 
 2019.11.13
-* The commands **train** and **error** support weights.{break}
+* The commands **train** and **error** support weights.
 * New command **fit** calculates recall and precision for binary output.
 
 2019.03.28
