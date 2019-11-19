@@ -1,5 +1,5 @@
 {smcl}
-{* 13nov2019}{...}
+{* 19nov2019}{...}
 {hline}
 help for {hi:brain}
 {hline}
@@ -121,6 +121,7 @@ r({hi:accuracy}) accurary: (TP+TN)/(TP+TN+FP+FN)
 
 {title:Example 1: OLS vs brain on unobserved interaction and polynomials}
 {inp}
+    clear
     set obs 100
     gen x1 = invnorm(uniform())
     gen x2 = invnorm(uniform())
@@ -147,6 +148,7 @@ r({hi:accuracy}) accurary: (TP+TN)/(TP+TN+FP+FN)
 
 {title:Example 2: OLS vs brain on non-linear function}
 {inp}
+    clear
     set obs 200
     gen x = 4*_pi/200 *_n
     gen y = sin(x)
@@ -203,8 +205,44 @@ r({hi:accuracy}) accurary: (TP+TN)/(TP+TN+FP+FN)
     brain fit t3 b3
     brain fit t4 b4
 {text}
+    
+{title:Example 5: dynamic adjustment of eta during training exploiting the "best" option}
+{inp}
+    clear
+    set obs 100
+    gen x1 = invnorm(uniform())
+    gen x2 = invnorm(uniform())
+    gen y = x1 + x2 + x1^2 + x2^2 + x1*x2
 
-{title: Update History}
+    sum y
+    scalar ymean = r(mean)
+    egen sst = sum((y-ymean)^2)
+
+    reg y x1 x2
+    predict yreg
+    egen rreg = sum((y-yreg)^2)
+
+    brain define, input(x1 x2) output(y) hidden(10 10)
+    local eta = 20 // Usually you would start with 2 or smaller. If eta is too large, the training can freeze.
+    local run = 1
+    while `run' <= 50 & `eta' >= 20/(2^10) { // define a minimum eta
+        di as text "RUN " as result `run'
+        brain train, iter(100) eta(`eta') best
+        if r(iter) == 0 {
+            local eta = `eta'/2
+        }
+        else {
+            local run = `run'+1
+        }
+    }
+    brain think ybrain
+    egen rbrain = sum((y-ybrain)^2)
+
+    di "R-squared reg: " 1-rreg/sst
+    di "R-sq.   brain: " 1-rbrain/sst
+{text}
+
+{title:Update History}
 
 {p 0 11}{hi:2019.11.13} The commands {hi:train} and {hi:error} support weights.{break}
 New command {hi:fit} calculates recall and precision for binary output.
