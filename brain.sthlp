@@ -225,7 +225,7 @@ r({hi:accuracy}) accurary: (TP+TN)/(TP+TN+FP+FN)
     brain define, input(x1 x2) output(y) hidden(10 10)
     local eta = 20 // Usually you would start with 2 or smaller. If eta is too large, the training can freeze.
     local run = 1
-    while `run' <= 50 & `eta' >= 20/(2^10) { // define a minimum eta
+    while `run' <= 50 & `eta' >= 20/2^10 { // minimum eta after 10 halvings
         di as text "RUN " as result `run'
         brain train, iter(100) eta(`eta') best
         if r(iter) == 0 {
