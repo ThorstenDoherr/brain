@@ -17,7 +17,7 @@ These plugins are not yet tested due to lack of respective Stata versions. I rea
 * Replaced all mata components with C plugins supporting multiprocessing.
 * The network can exceed the maximum matrix size of Stata.
 * Syntax errors are now more consistent.
-* new **sp** option **de**activates multiprocessing if necessary.
+* new **sp** option deactivates multiprocessing if necessary.
 
 2019.11.13
 * The commands **train** and **error** support weights.
