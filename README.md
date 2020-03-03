@@ -5,7 +5,7 @@
 STATA
 
 ## Getting started
-* Copy brain.ado, brain.sthlp brainwin.plugin, brainunix.plugin and brainmac.plugin files into your ADO file directory (typically c:\ado)
+* Copy brain.ado, brain.sthlp, brainwin.plugin, brainunix.plugin and brainmac.plugin files into your ADO file directory (typically c:\ado)
 * Call the help file within STATA: help brain
 * Try out the examples provided by the help document by copying them into do-files
 
