@@ -1,12 +1,19 @@
 # brain - neural network
 **brain** is a no frills implementation of a backpropagation algorithm designed for a hassle free setup of multi-layered neural networks. After training the whole network can be saved/loaded using so called brain-files (default postfix .brn). The network is represented by a set of reserved matrices to provide transparent access to all components and to support older Stata versions. Additional functions facilitate the calculation of pseudo-marginal effects or signal through-put, but the main utility is of course prediction, i.e. for propensity scores or classification.
+
 ## Prerequisites
 STATA
+
 ## Getting started
 * Copy brain.ado and brain.sthlp into your ADO file directory (typically c:\ado)
 * Call the help file within STATA: help brain
 * Copy the provided examples from the help document into do-files and run them
+
 ## Version history
+2020.03.02
+* Replaced all mata components with C plugins supporting multiprocessing.
+* The network can exceed the maximum matrix size of Stata.
+* Syntax errors are now more consistent.
 
 2019.11.13
 * The commands **train** and **error** support weights.
