@@ -144,8 +144,8 @@ network. By default, the training will use all available processors unless the b
 efficiency, the batch size should be devisible by the number of processors, which can be inquired by calling {cmd:brain} without an option.
 Multiprocessing can be deactivated with the option {cmd:sp} (single processing). This can be usefull for keeping the etiquete on shared servers or
 if some leeway for other applications is needed. If a neural network has only a low number of weights the overhead imposed by multiprocesing can
-lead to a negative effect on performance, especially on machines with only 4 or less cores.
-It is advised to undertake performance comparissons between single- and multiprocessing (see Example 2).
+lead to a negative effect on performance, especially on machines with only 4 or less cores. It is advised to undertake performance comparissons
+between single- and multiprocessing (see Example 2).
 
 {title:Example 1: OLS vs brain on unobserved interaction and polynomials}
 {inp}
