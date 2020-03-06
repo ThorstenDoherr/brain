@@ -82,7 +82,7 @@ r({hi:output}) matrix of the output signals (de-normalized and raw)
 {p 0 4}{cmd:brain {ul:tr}ain} [{it:weight}], {ul:it}er({it:default = 0}) [{ul:e}ta({it:default = 0.25})] [{ul:b}atch({it:default = 1})] [{ul:r}eport({it:default = 10})] [{ul:be}st] [{ul:n}oshuffle] [{ul:sp}]{break}
 initiates the backpropagation training for {hi:iter} iterations using a training factor {cmd:eta}. With the option {cmd:batch} the batch size can
 be specified. If it is larger than 1, stochastic gradient descent (SGD) is applied. All gradients, determined by the backpropagation algorithm,
-are accumulated to a batch gradient which is applied to the weights. Batch training may converge faster for deep networks but the real benefit of
+are accumulated to a batch gradient, which is applied to the weights. Batch training may converge faster for deep networks but the real benefit of
 batch training is parallelization (see {hi:Performance and multiprocessing} below). In general, the data is reshuffled before an iteration. If
 {hi:noshuffle} is specified, shuffling will be omitted. This is useful to hone the network in subsequent trainings, as the gradient decent is more
 stable along the trodden path and the risk of local minima is mitigated by the initial training based on shuffling. A good strategy is to start
@@ -141,10 +141,10 @@ r({hi:accuracy}) accurary: (TP+TN)/(TP+TN+FP+FN)
 specified. During training, the observations of a batch are distributed to separate cores. This is possible because the delta vectors derived
 from every observation in a batch are independent. Only after the processing of a batch the vectors will be applied to the weights of the neural
 network. By default, the training will use all available processors unless the batch size is smaller than the processor number. For the highest
-efficiency, the batch size should be devisible by the number of processors, which can be inquired by calling {cmd:brain} without an option.
-Multiprocessing can be deactivated with the option {cmd:sp} (single processing). This can be usefull for keeping the etiquete on shared servers or
-if some leeway for other applications is needed. If a neural network has only a low number of weights the overhead imposed by multiprocesing can
-lead to a negative effect on performance, especially on machines with only 4 or less cores. It is advised to undertake performance comparissons
+efficiency, the batch size should be divisible by the number of processors, which can be inquired by calling {cmd:brain} without an option.
+Multiprocessing can be deactivated with the option {cmd:sp} (single processing). This can be useful for keeping the etiquette on shared servers or
+if some leeway for other applications is needed. If a neural network has only a low number of weights, the overhead imposed by multiprocessing can
+lead to a negative effect on performance, especially on machines with only 4 or less cores. It is advised to undertake performance comparisons
 between single- and multiprocessing (see Example 2).
 
 {title:Example 1: OLS vs brain on unobserved interaction and polynomials}
