@@ -6,48 +6,6 @@
 #include <math.h>
 #include <string.h>
 
-matrix allocateBrainMatrix()
-{	char brain[17];
-	int b = 1;
-	int sum = 0;
-	int cols = SF_col("brain1");
-	while (cols > 0)
-	{	sum += cols;
-		b++;
-		sprintf(brain, "brain%d", b);
-		cols = SF_col(brain);
-	}
-	matrix M = allocateMatrix(sum, 1);
-	double *m = &M[1][1];
-	for (int i = 1; i < b; i++)
-	{	sprintf(brain, "brain%d", i);
-		cols = SF_col(brain);
-		for (int j = 1; j <= cols; j++)
-		{	SF_mat_el(brain,1,j,m);
-			m++;
-		}
-	}
-	return M;
-}
-
-void storeBrainMatrix(matrix M)
-{	char buf[80];
-	char brain[17];
-	double *m = &M[1][1];
-	int b = 1;
-	sprintf(brain, "brain%d", b);
-	int cols = SF_col(brain);
-	while (cols > 0)
-	{	for (int i = 1; i <= cols; i++)
-		{	SF_mat_store(brain,1,i,*m);
-			m++;
-		}
-		b++;
-		sprintf(brain, "brain%d", b);
-		cols = SF_col(brain);
-	}
-}
-
 void value2signal(matrix inout)
 {	row io = inout[4];
 	int cols = *io;
@@ -174,8 +132,8 @@ void backward(matrix layer, matrix output, matrix neuron, matrix brain, double w
 }
 
 void brainforward(int raw)
-{	matrix layer = allocateStataMatrix("layer");
-	matrix brain = allocateBrainMatrix();
+{	matrix brain = allocateStataMatrix("brain");
+	matrix layer = allocateStataMatrix("layer");
 	matrix neuron = allocateMatrix(SF_col("neuron"),1);
 	matrix output = allocateStataMatrix("output");
 	matrix input = allocateStataMatrix("input");
@@ -191,13 +149,13 @@ void brainforward(int raw)
 	destroyMatrix(input);
 	destroyMatrix(output);
 	destroyMatrix(neuron);
-	destroyMatrix(brain);
 	destroyMatrix(layer);
+	destroyMatrix(brain);
 }	
 
 void brainsignalSP(char *result, int inp)
-{	matrix layer = allocateStataMatrix("layer");
-	matrix brain = allocateBrainMatrix();
+{	matrix brain = allocateStataMatrix("brain");
+	matrix layer = allocateStataMatrix("layer");
 	matrix neuron = allocateMatrix(SF_col("neuron"),1);
 	matrix output = allocateStataMatrix("output");
 	matrix input = allocateStataMatrix("input");
@@ -220,8 +178,8 @@ void brainsignalSP(char *result, int inp)
 	destroyMatrix(input);
 	destroyMatrix(output);
 	destroyMatrix(neuron);
-	destroyMatrix(brain);
 	destroyMatrix(layer);
+	destroyMatrix(brain);
 	sprintf(result, "%d", N); 
 }
 
@@ -232,8 +190,8 @@ void brainsignalMP(char *result, int inp)
 	N = matrows(sel);
 	if (N < threads) threads = N;
 	if (threads < 1) threads = 1;
+	matrix brain = allocateStataMatrix("brain");
 	matrix layer = allocateStataMatrix("layer");
-	matrix brain = allocateBrainMatrix();
 	cube neuron = allocateCube(SF_col("neuron"),1,threads);
 	cube input = allocateCopyCube(allocateStataMatrix("input"),threads);
 	cube output = allocateCopyCube(allocateStataMatrix("output"),threads);
@@ -256,14 +214,14 @@ void brainsignalMP(char *result, int inp)
 	destroyCube(input);
 	destroyCube(output);
 	destroyCube(neuron);
-	destroyMatrix(brain);
 	destroyMatrix(layer);
+	destroyMatrix(brain);
 	sprintf(result, "%d", N); 
 }
 
 void brainerrorSP(char *result)
 {	double weight;
-	matrix brain = allocateBrainMatrix();
+	matrix brain = allocateStataMatrix("brain");
 	matrix layer = allocateStataMatrix("layer");
 	matrix neuron = allocateMatrix(SF_col("neuron"),1);
 	matrix output = allocateStataMatrix("output");
@@ -304,7 +262,7 @@ void brainerrorMP(char *result)
 	N = matrows(sel);
 	if (N < threads) threads = N;
 	if (threads < 1) threads = 1;
-	matrix brain = allocateBrainMatrix();
+	matrix brain = allocateStataMatrix("brain");
 	matrix layer = allocateStataMatrix("layer");
 	cube neuron = allocateCube(SF_col("neuron"),1,threads);
 	cube input = allocateCopyCube(allocateStataMatrix("input"),threads);
@@ -342,7 +300,7 @@ void braintrainSP(char *result, double eta, int batch, int iter, int shuffle)
 {	int b, N, icols, ocols, bcols, i, j, k, obs;
 	double weight, *D, *B;
 	if (batch <= 0) batch = 1;
-	matrix brain = allocateBrainMatrix();
+	matrix brain = allocateStataMatrix("brain");
 	matrix layer = allocateStataMatrix("layer");
 	matrix output = allocateStataMatrix("output");
 	matrix input = allocateStataMatrix("input");
@@ -387,7 +345,7 @@ void braintrainSP(char *result, double eta, int batch, int iter, int shuffle)
 			}
 		}
 	}
-	storeBrainMatrix(brain);
+	storeStataMatrix(brain, "brain");
 	destroyMatrix(sel);
 	destroyMatrix(err);
 	destroyMatrix(delta);
@@ -409,7 +367,7 @@ void braintrainMP(char *result, double eta, int batch, int iter, int shuffle)
 	N = matrows(sel);
 	if (N < threads) threads = N;
 	if (threads < 1) threads = 1;
-	matrix brain = allocateBrainMatrix();
+	matrix brain = allocateStataMatrix("brain");
 	matrix layer = allocateStataMatrix("layer");
 	cube input = allocateCopyCube(allocateStataMatrix("input"),threads);
 	cube output = allocateCopyCube(allocateStataMatrix("output"),threads);
@@ -455,7 +413,7 @@ void braintrainMP(char *result, double eta, int batch, int iter, int shuffle)
 			}
 		}
 	}
-	storeBrainMatrix(brain);
+	storeStataMatrix(brain, "brain");
 	destroyMatrix(sel);
 	destroyCube(delta);
 	destroyCube(err);
@@ -471,7 +429,7 @@ STDLL stata_call(int argc, char *argv[])
 {	char result[254];
 	result[0] = '\0';
 	if (argc == 0)
-	{	sprintf(result, "%s %d", "2020.03.02", omp_get_num_procs());
+	{	sprintf(result, "%s %d", "2020.03.11", omp_get_num_procs());
 	}
 	else if (strcmp(argv[0],"forward") == 0)
 	{	if (argc < 2) brainforward(0);
