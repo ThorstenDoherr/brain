@@ -13,6 +13,11 @@ STATA
 These plugins are not yet tested due to lack of respective Stata versions. I really would appreciate if somebody with access to one of those could give me feedback about the functionality of the plugins. Mail comments to: **doherr@zew.de**
 
 ## Version history
+2020.03.11
+* All matrices can exceed matsize limitations by taking a detour over mata.
+* The brain matrix fragmentation of the former solution (2020.03.02) is obsolete.
+* The brain, load and save commands additionally verify the integrity of the matrix structure.
+
 2020.03.02
 * Replaced all mata components with C plugins supporting multiprocessing.
 * The network can exceed the maximum matrix size of Stata.

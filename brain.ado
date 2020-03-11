@@ -42,10 +42,13 @@ program define brain, rclass
 	local procs = word("`plugin'",2)
 	if `cmdlen' == 0 {
 		di as txt "brain`os'.plugin " as result "`version'"
-		di as text "brain uses " as result "`procs'" as txt " processors" 
+		di as text "brain uses " as result "`procs'" as txt " processors"
 		return local plugin = "brain`os'.plugin"
 		return local version = "`version'"
 		return scalar mp = `procs'
+		di as text "brain matrices:"
+		braindir
+		braincheck easy
 		exit
 	}
 	if `cmdlen' < 2 {
@@ -177,7 +180,8 @@ program define brain, rclass
 			matrix drop layer
 			error 999
 		}
-		matrix input = J(4,layer[1,1],0)
+		local cols = layer[1,1]
+		mata: st_matrix("input", J(4,`cols',0))
 		local i = 1
 		foreach v of varlist `input' {
 			qui sum `v' `if' `in'
@@ -190,7 +194,8 @@ program define brain, rclass
 		}
 		matrix colnames input = `input'
 		matrix rownames input = min norm value signal
-		matrix output = J(4,layer[1,colsof(layer)],0)
+		local cols = layer[1,colsof(layer)]
+		mata: st_matrix("output", J(4,`cols',0))
 		local i = 1
 		foreach v of varlist `output' {
 			qui sum `v' `if' `in'
@@ -205,7 +210,7 @@ program define brain, rclass
 		matrix rownames output = min norm value signal
 		braincreate
 		braininit `spread'
-		di as text "Defined matrices:"
+		di as text "defined matrices:"
 		braindir
 		exit
 	}
@@ -221,27 +226,12 @@ program define brain, rclass
 			di error 198
 		}
 		local using = `"`1'"'
+		braincheck
 		tempname save
-		cap local layer = colsof(layer)
-		if _rc > 0 {
-			di as error "no network defined"
-			error 999
-		}
-		cap local size = colsof(brain1)
-		if _rc > 0 {
-			di as error "no network defined"
-			error 999
-		}
-		cap local isize = colsof(input)
-		if _rc > 0 {
-			di as error "no network defined"
-			error 999
-		}
-		cap local osize = colsof(output)
-		if _rc > 0 {
-			di as error "no network defined"
-			error 999
-		}
+		local layer = colsof(layer)
+		local size = colsof(brain)
+		local isize = colsof(input)
+		local osize = colsof(output)
 		local using = subinstr(trim(`"`using'"'),"\","/",.)
 		if regex(`"`using'?"',"\.[^/]*\?") == 0 {
 			local using = `"`using'.brn"'
@@ -270,14 +260,8 @@ program define brain, rclass
 			file write `save' %8z (output[1,`i'])
 			file write `save' %8z (output[2,`i'])
 		}
-		local b = 1
-		cap local size = colsof(brain`b')
-		while _rc == 0 {
-			forvalue i = 1/`size' {
-				file write `save' %8z (brain`b'[1,`i'])
-			}
-			local b = `b'+1
-			cap local size = colsof(brain`b')
+		forvalue i = 1/`size' {
+			file write `save' %8z (brain[1,`i'])
 		}
 		file close `save'
 		exit
@@ -322,7 +306,7 @@ program define brain, rclass
 		local len = `bin'
 		file read `load' %`len's str
 		local layer = layer[1,1]
-		matrix input = J(4,`layer',0)
+		mata: st_matrix("input", J(4,`layer',0))
 		matrix colnames input = `str'
 		matrix rownames input = min norm value signal
 		forvalue i = 1/`layer' {
@@ -335,7 +319,7 @@ program define brain, rclass
 		local len = `bin'
 		file read `load' %`len's str
 		local layer = layer[1,colsof(layer)]
-		matrix output = J(4,`layer',0)
+		mata: st_matrix("output", J(4,`layer',0))
 		matrix colnames output = `str'
 		matrix rownames output = min norm value signal
 		forvalue i = 1/`layer' {
@@ -345,30 +329,26 @@ program define brain, rclass
 			matrix output[2,`i'] = `bin'
 		}
 		braincreate
-		local b = 1
-		cap local size = colsof(brain`b')
-		while _rc == 0 {
-			forvalue i = 1/`size' {
-				file read `load' %8z `bin'
-				if r(eof) {
-					di as error "invalid file format"
-					file close `load'
-					error 999
-				}
-				matrix brain`b'[1,`i'] = `bin'
+		local size = colsof(brain)
+		forvalue i = 1/`size' {
+			file read `load' %8z `bin'
+			if r(eof) {
+				di as error "invalid file format"
+				file close `load'
+				error 999
 			}
-			local b = `b'+1
-			cap local size = colsof(brain`b')
+			matrix brain[1,`i'] = `bin'
 		}
-		file read `load' %8z `bin'
+		file read `load' %8z `bin'  // there should be no leftovers
 		if r(eof) == 0 {
 			di as error "invalid file format"
 			file close `load'
 			error 999
 		}
 		file close `load'
-		di as text "Loaded matrices:"
+		di as text "loaded matrices:"
 		braindir
+		braincheck
 		exit
 	}
 	if `"`cmd'"' == substr("feed",1,`cmdlen') {
@@ -445,7 +425,7 @@ program define brain, rclass
 		token `"`anything'"'
 		macro shift
 		local mp = cond("`sp'" == "", "MP", "SP")
-		tempname signal 
+		tempname signal sn bn cn
 		tempvar delta touse w
 		local inames : colnames input
 		local onames : colnames output
@@ -470,28 +450,33 @@ program define brain, rclass
 			}
 		}
 		marksample touse    
-		qui des, varlist
-		local names = r(varlist)
 		markout `touse' `inames' `onames'
 		brainweight `w' `touse' `exp'
-		local bnames = ""
+		scalar `sn' = ""		
+		scalar `bn' = ""
 		forvalue o = 1/`osize' {
 			tempvar signal`o' base`o'
 			qui gen double `signal`o'' = .
 			qui gen double `base`o'' = .
-			local snames = "`snames' `signal`o''"
-			local bnames = "`bnames' `base`o''"
+			scalar `sn' = `sn' + " `signal`o''"
+			scalar `bn' = `bn' + " `base`o''"
 		}
+		local snames = scalar(`sn')
+		scalar drop `sn'
+		local bnames = scalar(`bn')
+		scalar drop `bn'
 		qui gen double `delta' = .
-		matrix `signal' = J(`msize',`osize', 0)
+		mata: st_matrix("`signal'", J(`msize',`osize', 0))
 		matrix rownames `signal' = `mnames'
-		local cnames = ""
+		scalar `cn' = ""
 		forvalue o = 1/`osize' {
 			local oname = word("`onames'", `o')
-			local cnames = "`cnames' `oname'"
+			scalar `cn' = `cn' + " `oname'"
 		}
-		di as text "unrestricted " _continue
+		local cnames = scalar(`cn')
+		scalar drop `cn'
 		matrix colnames `signal' = `cnames'
+		di as text "unrestricted " _continue
 		plugin call brainiac `inames' `bnames' if `touse', think`mp'
 		local ind = 0
 		foreach v of varlist `mnames' {
@@ -533,8 +518,6 @@ program define brain, rclass
 			qui gen double `v' = .
 		}
 		marksample touse    
-		qui des, varlist
-		local names = r(varlist)
 		local inames : colnames input
 		markout `touse' `inames' 
 		plugin call brainiac `inames' `*' if `touse', think`mp'
@@ -551,8 +534,6 @@ program define brain, rclass
 		local mp = cond("`sp'" == "", "MP", "SP")
 		tempvar touse w
 		marksample touse    
-		qui des, varlist
-		local names = r(varlist)
 		local inames : colnames input
 		local onames : colnames output
 		markout `touse' `inames' `onames'
@@ -577,6 +558,7 @@ program define brain, rclass
 		local shuffle = "`noshuffle'" == ""
 		local best = "`best'" != ""
 		tempvar touse w
+		tempname bestbrain
 		if `eta' <= 0 {
 			di as error "eta has to be a number larger than zero"
 			error 999
@@ -593,18 +575,7 @@ program define brain, rclass
 		if `batch' <= 1 {
 			local mptrain = "SP"  // multiprocessing only works with mini-batches
 		}
-		if `best' {
-			local b = 1
-			cap local row = rowsof(brain`b')
-			while _rc == 0 {
-				tempname best`b'
-				local b = `b'+1
-				cap local row = rowsof(brain`b')
-			}
-		}
 		marksample touse    
-		qui des, varlist
-		local names = r(varlist)
 		local inames : colnames input
 		local onames : colnames output
 		markout `touse' `inames' `onames'
@@ -623,13 +594,7 @@ program define brain, rclass
 		if `best' {
 			plugin call brainiac `inames' `onames' `w' if `touse', error`mp'
 			local minerr = word("`plugin'",1)
-			local b = 1
-			cap local row = rowsof(brain`b')
-			while _rc == 0 {
-				matrix `best`b'' = brain`b'
-				local b = `b'+1
-				cap local row = rowsof(brain`b')
-			}
+			matrix `bestbrain' = brain
 			di as result %9.0f 0 as text " {c |} " as result %12.9f `minerr' as text " {c |} " as result %12.9f .
 			local prev = `minerr'
 		}
@@ -647,25 +612,13 @@ program define brain, rclass
 			local i = `i'+`epoch'
 			di as result %9.0f `i' as text " {c |} " as result %12.9f `err' as text " {c |} " as result %12.9f `delta'
 			if `err' < `minerr' {
-				local b = 1
-				cap local row = rowsof(brain`b')
-				while _rc == 0 {
-					matrix `best`b'' = brain`b'
-					local b = `b'+1
-					cap local row = rowsof(brain`b')
-				}
+				matrix `bestbrain' = brain
 				local miniter = `i'
 				local minerr = `err'
 			}
 		}
 		if `best' & `err' >= `minerr' {
-			local b = 1
-			cap local row = rowsof(brain`b')
-			while _rc == 0 {
-				matrix brain`b' = `best`b''
-				local b = `b'+1
-				cap local row = rowsof(brain`b')
-			}
+			matrix brain = `bestbrain'
 			local delta = `minerr'-`prev'
 			local err = `minerr'
 			local iter = `miniter'
@@ -684,26 +637,104 @@ end
 
 cap program drop braindir
 program define braindir
-	di as result "   input[" rowsof(input) ","  colsof(input) "]"
-	di as result "  output[" rowsof(output) "," colsof(output) "]"
-	di as result "  neuron[" rowsof(neuron) "," colsof(neuron) "]"
-	di as result "   layer[" rowsof(layer) "," colsof(layer) "]"
-	local b = 1
-	cap local row = rowsof(brain`b')
-	while _rc == 0 {
-		di as result "  brain`b'[" `row' "," colsof(brain`b') "]"
-		local b = `b'+1
-		cap local row = rowsof(brain`b')
+	cap local rows = rowsof(input)
+	if _rc == 0 {
+		di as result " input[" `rows' ","  colsof(input) "]"
 	}
+	cap local rows = rowsof(output)
+	if _rc == 0 {
+		di as result "output[" `rows' ","  colsof(output) "]"
+	}
+	cap local rows = rowsof(neuron)
+	if _rc == 0 {
+		di as result "neuron[" `rows' ","  colsof(neuron) "]"
+	}
+	cap local rows = rowsof(layer)
+	if _rc == 0 {
+		di as result " layer[" `rows' ","  colsof(layer) "]"
+	}
+	cap local rows = rowsof(brain)
+	if _rc == 0 {
+		di as result " brain[" `rows' ","  colsof(brain) "]"
+	}
+end
+
+cap program drop braincheck
+program define braincheck
+	local ok = 0
+	foreach m in input output layer neuron brain {
+		cap local rows = rowsof(`m')
+		if _rc == 0 {
+			local ok = `ok'+1
+		}
+	}
+	if `ok' == 0 {
+		if "`1'" != "" {
+			di as text "no brain detected"
+			exit 0
+		}
+		di as error "no brain detected"
+		exit 999
+	}
+	if `ok' > 0 & `ok' < 5 {
+		di as error "inomplete brain detected"
+		exit 999
+	}
+	if rowsof(input) != 4 {
+		di as error "invalid input matrix"
+		exit 999
+	}
+	if rowsof(output) != 4 {
+		di as error "invalid output matrix"
+		exit 999
+	}
+	if rowsof(layer) != 1 {
+		di as error "invalid layer matrix"
+		exit 999
+	}
+	if rowsof(neuron) != 1 {
+		di as error "invalid neuron matrix"
+		exit 999
+	}
+	if rowsof(brain) != 1 {
+		di as error "invalid brain matrix"
+		exit 999
+	}
+	if colsof(input) != layer[1,1] {
+		di as error "input and layer matrices are incompatible"
+		exit 999
+	}
+	if colsof(output) != layer[1,colsof(layer)] {
+		di as error "output and layer matrices are incompatible"
+		exit 999
+	}
+	local size = 0
+	local nsize = colsof(input)
+	local layer = colsof(layer)
+	forvalue l = 2/`layer' {
+		local neurons = layer[1,`l']
+		local weights = layer[1,`l'-1]
+		local nsize = `nsize' + `neurons'
+		local size = `size' + `neurons' * (`weights'+1)
+	}
+	if colsof(neuron) != `nsize' {
+		di as error "neuron and layer matrices are incompatible"
+		exit 999
+	}
+	if colsof(brain) != `size' {
+		di as error "brain and layer matrices are incompatible"
+		exit 999
+	}
+	exit 0
 end
 
 cap program drop braincreate
 program define braincreate
 	set matsize 10000
+	tempname names
 	local size = 0
 	local layer = colsof(layer)
-	local b = 0
-	local c = 10000
+	scalar `names' = ""
 	forvalue l = 2/`layer' {
 		local p = `l'-1
 		local neurons = layer[1,`l']
@@ -717,52 +748,26 @@ program define braincreate
 		}
 		forvalue n = 1/`neurons' {
 			forvalue w = 1/`weights' {
-				local c = `c'+1
-				if `c' > 10000 {
-					local b = `b'+1
-					tempname names`b'
-					scalar `names`b'' = ""
-					local c = 1
-				}
-				scalar `names`b'' = `names`b'' + " `prefix'`n'w`w'"
+				scalar `names' = `names' + " `prefix'`n'w`w'"
 			}
-			local c = `c'+1
-			if `c' > 10000 {
-				local b = `b'+1
-				tempname names`b'
-				scalar `names`b'' = ""
-				local c = 1
-			}
-			scalar `names`b'' = `names`b'' + " `prefix'`n'b"
+			scalar `names' = `names' + " `prefix'`n'b"
 		}
 	}
-	local b = 1
-	forvalue i = 1(10000)`size' {
-		local rest = `size'-`i'+1
-		if `rest' > 10000 {
-			local rest = 10000
-		}
-		matrix brain`b' = J(1,`rest',0)
-		local names = scalar(`names`b'')
-		matrix colnames brain`b' = `names'
-		matrix rownames brain`b' = weight
-		local b = `b'+1
-	}
-	cap matrix drop brain`b' // dropping follow-up matrices
-	while _rc == 0 {
-		local b = `b'+1
-		cap matrix drop brain`b' 
-	}
-	local names = "in"
+	mata: st_matrix("brain", J(1,`size',0))
+	local cnames = scalar(`names')
+	scalar `names' = ""
+	matrix colnames brain = `cnames'
+	matrix rownames brain = weight
+	local cnames = "in"
 	local layer = `layer'-2
 	forvalue l = 1/`layer' {
-		local names = "`names' hid`l'"
+		local cnames = "`cnames' hid`l'"
 	}
-	local names = "`names' out"
-	matrix colnames layer = `names'
+	local cnames = "`cnames' out"
+	matrix colnames layer = `cnames'
 	matrix rownames layer = neurons
 	local layer = colsof(layer)
-	local names = ""
+	local cnames = ""
 	local size = 0
 	forvalue i = 1/`layer' {
 		local neurons = layer[1,`i']
@@ -778,11 +783,13 @@ program define braincreate
 			local prefix = "h`j'n"
 		}
 		forvalue j = 1/`neurons' {
-			local names = "`names' `prefix'`j'"
+			scalar `names' = `names' + " `prefix'`j'"
 		}
 	}
-	matrix neuron = J(1,`size',0)
-	matrix colnames neuron = `names'
+	local cnames = scalar(`names')
+	scalar drop `names'
+	mata: st_matrix("neuron", J(1,`size',0))
+	matrix colnames neuron = `cnames'
 	matrix rownames neuron = signal
 end	
 

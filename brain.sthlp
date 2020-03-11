@@ -1,5 +1,5 @@
 {smcl}
-{* 02mar2020}{...}
+{* 11mar2020}{...}
 {hline}
 help for {hi:brain}
 {hline}
@@ -35,26 +35,21 @@ help for {hi:brain}
 {hi:output} - defining output variable names, containing the output signal and normalization parameters{break}
 {hi:neuron} - containing neuronal signals{break}
 {hi:layer}{space 2}- defining the structure of the network{break}
-{hi:brain1}{space 2}- containing the first chunk of 10000 synapse weights and bias{break}
-{hi:brain2}{space 2}- containing the second chunk of 10000 synapse weights and bias (if applicable){break}
-...{break}
-{hi:brain}{it:n}{space 2}- containing the n-th chunk of synapse weights and bias (if applicable)
+{hi:brain}{space 2}- containing synapse weights and neuronal bias{break}
 {p_end}
 
-{p}{hi:Be aware of potential name conflicts! Do not manually change those matrices! Do not create "brain#" matrices!}{p_end}
-
-{p}{cmd:brain} circumvents the matrix size limitations of Stata by creating sequential brain# matrices containing 10000 weights each.{p_end}
+{p}{hi:Be aware of potential name conflicts! Do not manually change those matrices!}{p_end}
 
 {p}Use {cmd:matrix list} {it:matrix_name} to study the content of the network matrices.{p_end}
 
 {title:Commands and Options}
 
 {p 0 4}{cmd:brain}{break}
-displays the used plugin, version date and the number of processors used for multiprocessing.{break}
+displays the used plugin, version date, the number of processors used for multiprocessing and the structure of the brain matrices. It also verifies the integrity of the structure.{break}
 Stored results:{break}
 r({hi:plugin}) used plugin{break}
 r({hi:version}) version date{break}
-r({hi:mp}) number of processors used for multiprocessing (option {cmd:mp})
+r({hi:mp}) number of processors used for multiprocessing
 
 {p 0 4}{cmd:brain {ul:de}fine}, {ul:in}put({it:varlist}) {ul:o}utput({it:varlist}) [{ul:h}idden({it:numlist})] [{ul:s}pread({it:default = 0.25})]{break}
 defines the structure of the neural network. Parameters to normalize the {hi:input} and {hi:output} variables between [0,1] are determined based on the
@@ -136,10 +131,10 @@ r({hi:accuracy}) accurary: (TP+TN)/(TP+TN+FP+FN)
 
 {title:Performance and Multiprocessing}
 
-{p}{cmd:brain} uses C plugins supporting multiprocessing (the parallel useage of multiple processors/cores). While some of the commands, e.g.
-{cmd:error} or {cmd:think}, always benefit from multiple cores, the {cmd:train} command uses multiprocessing only if a batch size larger than 1 is
+{p}{cmd:brain} uses C plugins supporting multiprocessing (the parallel usage of multiple processors/cores). While some of the commands, e.g. {cmd:error}
+or {cmd:think}, always benefit from multiple cores, the {cmd:train} command uses multiprocessing only if a batch size larger than 1 is
 specified. During training, the observations of a batch are distributed to separate cores. This is possible because the delta vectors derived
-from every observation in a batch are independent. Only after the processing of a batch the vectors will be applied to the weights of the neural
+from every observation in a batch are independent. Only after the processing of a batch, the vectors will be applied to the weights of the neural
 network. By default, the training will use all available processors unless the batch size is smaller than the processor number. For the highest
 efficiency, the batch size should be divisible by the number of processors, which can be inquired by calling {cmd:brain} without an option.
 Multiprocessing can be deactivated with the option {cmd:sp} (single processing). This can be useful for keeping the etiquette on shared servers or
@@ -313,6 +308,10 @@ between single- and multiprocessing (see Example 2).
 {text}
 
 {title:Update History}
+
+{p 0 11}{hi:2020.03.11} All matrices can exceed matsize limitations by taking a detour over mata.{break}
+The brain matrix fragmentation of the former solution (2020.03.02) is obsolete.{break}
+The brain, load and save commands additionally verify the integrity of the matrix structure.
 
 {p 0 11}{hi:2020.03.02} Replaced all mata components with C plugins supporting multiprocessing.{break}
 The network can exceed the maximum matrix size of Stata.{break}
