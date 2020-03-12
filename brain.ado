@@ -730,7 +730,6 @@ end
 
 cap program drop braincreate
 program define braincreate
-	set matsize 10000
 	tempname names
 	local size = 0
 	local layer = colsof(layer)
