@@ -27,7 +27,7 @@ program define brain, rclass
 					qui cd "`workpath'"
 					di as error "non-natively compiled windows plugin detected, e.g. cygwin/mingw"
 					di as error "unable to load " as result "brainwin.plugin" as error " from directory " as result "`brainpath'"
-					di as error "perhaps, additional dlls are required in that directory, e.g.:" _newline as result "brain`os'.plugin" _newline "libgomp-1.dll" _newline "libwinpthread-1.dll" _newline "libgcc_s_seh-1.dll"
+					di as error "perhaps additional dlls are required in that directory, e.g.:" _newline as result "brain`os'.plugin" _newline "libgomp-1.dll" _newline "libwinpthread-1.dll" _newline "libgcc_s_seh-1.dll"
 					error 999
 				}
 				qui cd "`workpath'"
@@ -56,7 +56,7 @@ program define brain, rclass
 		error 999
 	}
 	if `"`cmd'"' == substr("fit",1,`cmdlen') {
-		syntax [anything(id=command)] [pweight fweight aweight iweight/] [if] [in], [SP]
+		syntax [anything(id=command)] [if] [in], [SP]
 		token `"`anything'"'
 		macro shift
 		local mp = cond("`sp'" == "", "MP", "SP")

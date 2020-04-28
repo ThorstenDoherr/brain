@@ -13,6 +13,9 @@ STATA
 These plugins are not yet tested due to lack of respective Stata versions. I really would appreciate if somebody with access to one of those could give me feedback about the functionality of the plugins. Mail comments to: **doherr@zew.de**
 
 ## Version history
+2020.04.28
+* Revised documentation and program in regard of proper usage of weights.
+
 2020.03.11
 * All matrices can exceed matsize limitations by taking a detour over mata.
 * The brain matrix fragmentation of the former solution (2020.03.02) is obsolete.
@@ -22,7 +25,7 @@ These plugins are not yet tested due to lack of respective Stata versions. I rea
 * Replaced all mata components with C plugins supporting multiprocessing.
 * The network can exceed the maximum matrix size of Stata.
 * Syntax errors are now more consistent.
-* new **sp** option deactivates multiprocessing if necessary.
+* New **sp** option deactivates multiprocessing if necessary.
 
 2019.11.13
 * The commands **train** and **error** support weights.

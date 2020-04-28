@@ -1,5 +1,5 @@
 {smcl}
-{* 11mar2020}{...}
+{* 28apr2020}{...}
 {hline}
 help for {hi:brain}
 {hline}
@@ -22,7 +22,7 @@ help for {hi:brain}
 
 {p 8}{cmd:brain {ul:th}ink} {it:output_varlist} [{it:if}] [{it:in}], [{ul:sp}]
 
-{p 8}{cmd:brain {ul:ma}rgin} [{it:input_varlist}] [{it:if}] [{it:in}], [{ul:sp}]
+{p 8}{cmd:brain {ul:ma}rgin} [{it:input_varlist}] [{it:weight}] [{it:if}] [{it:in}], [{ul:sp}]
 
 {p 8}{cmd:brain {ul:fi}t} {it:original_binary_var} [{it:predicted_var}] [{it:if}] [{it:in}], [{ul:sp}]
 
@@ -106,7 +106,7 @@ creates or overwrites the specified output variables with the prediction of the 
 of output neurons. If an input variable exceeds the limits defined for the network, its signal will get truncated accordingly to stay in the range [0,1].{break}
 The function will use multiprocessing unless single processing is enforced with option {cmd:sp}.{break}
 
-{p 0 4}{cmd:brain {ul:ma}rgin} [{it:input_varlist}], [{ul:sp}]{break}
+{p 0 4}{cmd:brain {ul:ma}rgin} [{it:input_varlist}] [{it:weight}], [{ul:sp}]{break}
 reports the marginal effect of the selected input variables (default = all) on the output variables by calculating the difference between the estimated output and the
 output with a constant zero signal for the respective input variable.{break}
 The function will use multiprocessing unless single processing is enforced with option {cmd:sp}.{break}
@@ -308,6 +308,8 @@ between single- and multiprocessing (see Example 2).
 {text}
 
 {title:Update History}
+
+{p 0 11}{hi:2020.04.28} Revised documentation and program in regard of proper usage of weights.
 
 {p 0 11}{hi:2020.03.11} All matrices can exceed matsize limitations by taking a detour over mata.{break}
 The brain matrix fragmentation of the former solution (2020.03.02) is obsolete.{break}
