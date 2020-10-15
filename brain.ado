@@ -143,7 +143,7 @@ program define brain, rclass
 		exit
 	}
 	if `"`cmd'"' == substr("define",1,`cmdlen') {
-		syntax anything(id=command) [if] [in], INput(varlist) Output(varlist) [Hidden(numlist)] [Spread(real 0.5)]
+		syntax anything(id=command) [if] [in], INput(varlist) Output(varlist) [Hidden(numlist)] [Spread(real 0.5)] [Raw]
 		token `"`anything'"'
 		macro shift
 		if `"`1'"' != "" {
@@ -183,28 +183,59 @@ program define brain, rclass
 		local cols = layer[1,1]
 		mata: st_matrix("input", J(4,`cols',0))
 		local i = 1
-		foreach v of varlist `input' {
-			qui sum `v' `if' `in'
-			matrix input[1,`i'] = r(min)
-			matrix input[2,`i'] = 1 / (r(max) - r(min))
-			if input[2,`i'] == . {
-				matrix input[2,`i'] = 1
+		if "`raw'" == "" {
+			foreach v of varlist `input' {
+				qui sum `v' `if' `in'
+				matrix input[1,`i'] = r(min)
+				matrix input[2,`i'] = 1 / (r(max) - r(min))
+				if input[2,`i'] == . {
+					matrix input[2,`i'] = 1
+				}
+				local i = `i'+1
 			}
-			local i = `i'+1
+		}
+		else {	
+			foreach v of varlist `input' {
+				qui sum `v' `if' `in'
+				if r(min) < 0 | r(max) > 1 {
+					di as error "raw input variable `v' is violating the [0,1] range"
+					matrix drop input
+					error 999
+				}
+				matrix input[1,`i'] = 0
+				matrix input[2,`i'] = 1
+				local i = `i'+1
+			}
 		}
 		matrix colnames input = `input'
 		matrix rownames input = min norm value signal
 		local cols = layer[1,colsof(layer)]
 		mata: st_matrix("output", J(4,`cols',0))
 		local i = 1
-		foreach v of varlist `output' {
-			qui sum `v' `if' `in'
-			matrix output[1,`i'] = r(min)
-			matrix output[2,`i'] = 1 / (r(max) - r(min))
-			if output[2,`i'] == . {
-				matrix output[2,`i'] = 1
+		if "`raw'" == "" {
+			foreach v of varlist `output' {
+				qui sum `v' `if' `in'
+				matrix output[1,`i'] = r(min)
+				matrix output[2,`i'] = 1 / (r(max) - r(min))
+				if output[2,`i'] == . {
+					matrix output[2,`i'] = 1
+				}
+				local i = `i'+1
 			}
-			local i = `i'+1
+		}
+		else {
+			foreach v of varlist `output' {
+				qui sum `v' `if' `in'
+				if r(min) < 0 | r(max) > 1 {
+					di as error "raw output variable `v' is violating the [0,1] range"
+					matrix drop input
+					matrix drop output
+					error 999
+				}
+				matrix output[1,`i'] = 0
+				matrix output[2,`i'] = 1
+				local i = `i'+1
+			}
 		}
 		matrix colnames output = `output'
 		matrix rownames output = min norm value signal

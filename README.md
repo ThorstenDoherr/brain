@@ -13,6 +13,9 @@ STATA
 These plugins are not yet tested due to lack of respective Stata versions. I really would appreciate if somebody with access to one of those could give me feedback about the functionality of the plugins. Mail comments to: **doherr@zew.de**
 
 ## Version history
+2020.10.07
+* The new **define** paramter **raw** prevents automatic normalization for already normalized data.
+
 2020.04.28
 * Revised documentation and program in regard of proper usage of weights.
 
@@ -42,5 +45,8 @@ These plugins are not yet tested due to lack of respective Stata versions. I rea
 2018.11.21 (scc repository version)
 * Initial version
 
+### Acknowledgements
+I thank my colleague **Robert Braeutigam** for enabling the Unix and Mac plugin versions.
+
 ### Author
-* **Thorsten Doherr** - [ZEW](https://www.zew.de/en/team/tdo/)
+**Thorsten Doherr** - [ZEW](https://www.zew.de/en/team/tdo/)

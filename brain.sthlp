@@ -1,12 +1,12 @@
 {smcl}
-{* 28apr2020}{...}
+{* 15oct2020}{...}
 {hline}
 help for {hi:brain}
 {hline}
 
 {title:Neural Network}
 
-{p 8}{cmd:brain {ul:de}fine} [{it:if}] [{it:in}], {ul:in}put({it:varlist}) {ul:o}utput({it:varlist}) [{ul:h}idden({it:numlist})] [{ul:s}pread({it:default = 0.25})]
+{p 8}{cmd:brain {ul:de}fine} [{it:if}] [{it:in}], {ul:in}put({it:varlist}) {ul:o}utput({it:varlist}) [{ul:h}idden({it:numlist})] [{ul:s}pread({it:default = 0.25})] [{ul:r}aw]
 
 {p 8}{cmd:brain {ul:sa}ve} {it:filename}
 
@@ -51,10 +51,12 @@ r({hi:plugin}) used plugin{break}
 r({hi:version}) version date{break}
 r({hi:mp}) number of processors used for multiprocessing
 
-{p 0 4}{cmd:brain {ul:de}fine}, {ul:in}put({it:varlist}) {ul:o}utput({it:varlist}) [{ul:h}idden({it:numlist})] [{ul:s}pread({it:default = 0.25})]{break}
+{p 0 4}{cmd:brain {ul:de}fine}, {ul:in}put({it:varlist}) {ul:o}utput({it:varlist}) [{ul:h}idden({it:numlist})] [{ul:s}pread({it:default = 0.25})] [{ul:r}aw]{break}
 defines the structure of the neural network. Parameters to normalize the {hi:input} and {hi:output} variables between [0,1] are determined based on the
-active data. The {hi:hidden} layers can be omitted, leading to a simple perceptron. If specified, every number defines a hidden layer of the corresponding
-size starting at the input layer. The starting values of the synapses are randomly distributed between [-{hi:spread}, +{hi:spread}].
+active data. The normalization can be ignored by applying the {hi:raw} parameter requiring all {hi:input} and {hi:ouput} variables to be in the range of
+[0,1]. This is usefull for already normalized data. The {hi:hidden} layers can be omitted, leading to a simple perceptron. If specified, every number
+defines a hidden layer of the corresponding size starting at the input layer. The starting values of the synapses are randomly distributed between
+[-{hi:spread}, +{hi:spread}]. 
 
 {p 0 4}{cmd:brain {ul:sa}ve} {it:filename}{break}
 save the neural network matrizes into a file. Default postfix is ".brn".
@@ -309,6 +311,8 @@ between single- and multiprocessing (see Example 2).
 
 {title:Update History}
 
+{p 0 11}{hi:2020.10.07} The {hi:define} paramter {hi:raw} prevents automatic normalization for already normalized data.
+
 {p 0 11}{hi:2020.04.28} Revised documentation and program in regard of proper usage of weights.
 
 {p 0 11}{hi:2020.03.11} All matrices can exceed matsize limitations by taking a detour over mata.{break}
@@ -330,6 +334,10 @@ New command {hi:error} reports the overall absolute error instead of using the {
 {hi:signal} now works as intended.
 
 {p 0 11}{hi:2018.11.21} Initial version.
+
+{title:Acknowledgements}
+
+I thank my colleague {hi:Robert Braeutigam} for enabling the Unix and Mac plugin versions.
 
 {title:Author}
 
