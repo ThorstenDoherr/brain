@@ -9,12 +9,16 @@ STATA
 * Call the help file within STATA: help brain
 * Try out the examples provided by the help document by copying them into do-files
 
-## Unix and Mac plugins
-These plugins are not yet tested due to lack of respective Stata versions. I really would appreciate if somebody with access to one of those could give me feedback about the functionality of the plugins. Mail comments to: **doherr@zew.de**
+## Unix and Mac plugins not working
+The Unix and Mac plugins don't work because I was not able to link the OpenMP libraries (lipgomp.so.1) into the plugins. If somebody has experience about how to handle those libraries please mail to: **doherr@zew.de**
 
 ## Version history
+2020.11.30
+* Fixed a bug that prevented the usage of the **fit** command without a second variable.
+* The **fit** function allows the specification of a threshold for binary one.
+
 2020.10.07
-* The new **define** paramter **raw** prevents automatic normalization for already normalized data.
+* The **define** paramter **raw** prevents automatic normalization for already normalized data.
 
 2020.04.28
 * Revised documentation and program in regard of proper usage of weights.
@@ -45,8 +49,5 @@ These plugins are not yet tested due to lack of respective Stata versions. I rea
 2018.11.21 (scc repository version)
 * Initial version
 
-### Acknowledgements
-I thank my colleague **Robert Braeutigam** for enabling the Unix and Mac plugin versions.
-
 ### Author
-**Thorsten Doherr** - [ZEW](https://www.zew.de/en/team/tdo/)
+* **Thorsten Doherr** - [ZEW](https://www.zew.de/en/team/tdo/)

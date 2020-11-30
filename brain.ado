@@ -56,7 +56,7 @@ program define brain, rclass
 		error 999
 	}
 	if `"`cmd'"' == substr("fit",1,`cmdlen') {
-		syntax [anything(id=command)] [if] [in], [SP]
+		syntax [anything(id=command)] [if] [in], [SP] [TH(real 0.5)]
 		token `"`anything'"'
 		macro shift
 		local mp = cond("`sp'" == "", "MP", "SP")
@@ -75,17 +75,21 @@ program define brain, rclass
 		}
 		marksample touse
 		local true = `"`1'"'
+		markout `touse' `true'
 		if `wc' == 1 {
 			if colsof(output) != 1 {
 				di as error "predicted variable can only be omitted for univariate output"
 				error 999
 			}
-			plugin call brainiac `pred' if `touse', think`mp'
+			local inames : colnames input
+			markout `touse' `inames' 
+			qui gen double `pred' = .
+			plugin call brainiac `inames' `pred' if `touse', think`mp'
 		}
 		else {
 			local pred = `"`2'"'
 		}
-		markout `touse' `true' `pred'
+		markout `touse' `pred'
 		qui sum `true' if `touse'
 		if r(N) == 0 {
 			di as error "no observations"
@@ -106,13 +110,13 @@ program define brain, rclass
 		}
 		qui count if `touse'
 		local N = r(N)
-		qui count if `touse' & `pred' >= 0.5 & `true' >= 0.5
+		qui count if `touse' & `pred' >= `th' & `true' >= `th'
 		local TP = r(N)
-		qui count if `touse' & `pred' >= 0.5 & `true' < 0.5
+		qui count if `touse' & `pred' >= `th' & `true' < `th'
 		local FP = r(N)
-		qui count if `touse' & `pred' < 0.5 & `true' < 0.5
+		qui count if `touse' & `pred' < `th' & `true' < `th'
 		local TN = r(N)
-		qui count if `touse' & `pred' < 0.5 & `true' >= 0.5
+		qui count if `touse' & `pred' < `th' & `true' >= `th'
 		local FN = r(N)
 		local Trecall = `TP'/(`TP'+`FN') * 100
 		local Frecall = `TN'/(`TN'+`FP') * 100
@@ -130,6 +134,7 @@ program define brain, rclass
 		di as text "Recall     {c |} " as result %12.2fc `Trecall' " " %12.2fc `Frecall' 
 		di as text "Precision  {c |} " as result %12.2fc `Tprecision' " " %12.2fc `Fprecision' 
 		di as text "{hline 11}{c BT}{hline 26}
+		return scalar threshold = `th'
 		return scalar accuracy = `accuracy'
 		return scalar Fprecision = `Fprecision'
 		return scalar Tprecision = `Tprecision'

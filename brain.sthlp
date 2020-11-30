@@ -24,7 +24,7 @@ help for {hi:brain}
 
 {p 8}{cmd:brain {ul:ma}rgin} [{it:input_varlist}] [{it:weight}] [{it:if}] [{it:in}], [{ul:sp}]
 
-{p 8}{cmd:brain {ul:fi}t} {it:original_binary_var} [{it:predicted_var}] [{it:if}] [{it:in}], [{ul:sp}]
+{p 8}{cmd:brain {ul:fi}t} {it:original_binary_var} [{it:predicted_var}] [{it:if}] [{it:in}], [{ul:sp}] [{ul:th}({it:default = 0.5})]
 
 {title:Description}
 
@@ -115,9 +115,10 @@ The function will use multiprocessing unless single processing is enforced with 
 Stored results:{break}
 r({hi:margin}) matrix of input variables on marginal output signals
 
-{p 0 4}{cmd:brain {ul:fi}t} {it:original_binary_var} [{it:predicted_var}]{break}
+{p 0 4}{cmd:brain {ul:fi}t} {it:original_binary_var} [{it:predicted_var}] [{ul:th}({it:default = 0.5})]{break}
 reports precision and recall rates for a binary variable based on the prediction of the neural network or a specified predicted variable. The predictied variable can
-be omitted for univariate output. This convenient function can also be used ouside the context of brain predictions, i.e. comparing results of probit regressions.{break}
+be omitted for univariate output. This convenient function can also be used ouside the context of brain predictions, i.e. comparing results of probit regressions. Option
+{cmd:th} defines the threshold for binary one.{break}
 The function will use multiprocessing unless single processing is enforced with option {cmd:sp}.{break}
 Stored results:{break}
 r({hi:N}) number of observations{break}
@@ -129,7 +130,8 @@ r({hi:Trecall}) recall for true:  TP/(TP+FN){break}
 r({hi:Frecall}) recall for false: TN/(TN+FP){break}
 r({hi:Tprecision}) precision for true:  TP/(TP+FP){break}
 r({hi:Fprecision}) precision for false: TN/(TN+FN){break}
-r({hi:accuracy}) accurary: (TP+TN)/(TP+TN+FP+FN)
+r({hi:accuracy}) accurary: (TP+TN)/(TP+TN+FP+FN){break}
+r({hi:threshold}) threshold for binary one
 
 {title:Performance and Multiprocessing}
 
@@ -244,7 +246,7 @@ between single- and multiprocessing (see Example 2).
     keep if foreign == 0 | make == "Audi Fox" // extremely skewed distribution (only one foreign car)
     tab foreign
 
-    brain define, input(price-gear_ratio) output(foreign) hidden(20 20)
+    brain define, input(price-gear_ratio) output(foreign) hidden(10)
     brain train, iter(500) eta(1) best sp // not weighted: predicting the outlier provides almost no benefit
     brain fit foreign
 
@@ -252,7 +254,7 @@ between single- and multiprocessing (see Example 2).
     sum foreign
     replace w = (1-r(mean))/r(mean) if foreign == 1
 
-    brain define, input(price-gear_ratio) output(foreign) hidden(20 20)
+    brain define, input(price-gear_ratio) output(foreign) hidden(10)
     brain train [pweight=w], iter(500) eta(1) best sp // weighted: outlier has a large impact on the error
     brain fit foreign
 {text}
@@ -310,6 +312,9 @@ between single- and multiprocessing (see Example 2).
 {text}
 
 {title:Update History}
+
+{p 0 11}{hi:2020.11.30} Fixed a bug that prevented the usage of the {hi:fit} command without a second variable.{break}
+The {hi:fit} function allows the specification of a threshold for binary one.
 
 {p 0 11}{hi:2020.10.07} The {hi:define} paramter {hi:raw} prevents automatic normalization for already normalized data.
 
