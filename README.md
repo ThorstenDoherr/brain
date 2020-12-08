@@ -12,7 +12,8 @@ STATA
 ## Unix and Mac plugins
 The UNIX and MAC plugins do not support multiprocessing because of the erratic support of **openmp** between the distributions. To activate **openmp** the plugins need to be locally compiled (see: plugin/build.txt for instructions).
 The **brain.c** source code contains MP support, while **brainsp.c** renounces any **openmp** references. 
-NOTICE: The MAC plugin doesn't work until I get access to a MAC machine.
+
+NOTICE: The MAC plugin may not work as it was compiled on a UNIX machine.
 
 ## Version history
 2020.12.08
