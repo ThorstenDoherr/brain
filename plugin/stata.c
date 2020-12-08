@@ -1,6 +1,5 @@
 #include "stplugin.h"
 #include "stata.h"
-#include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
 

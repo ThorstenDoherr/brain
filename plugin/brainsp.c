@@ -1,6 +1,5 @@
 #include "stplugin.h"
 #include "stata.h"
-#include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -183,42 +182,6 @@ void brainsignalSP(char *result, int inp)
 	sprintf(result, "%d", N); 
 }
 
-void brainsignalMP(char *result, int inp)
-{	int i, N, icols, obs, thread;
-	int threads = omp_get_num_procs();
-	matrix sel = selectedObs();
-	N = matrows(sel);
-	if (N < threads) threads = N;
-	if (threads < 1) threads = 1;
-	matrix brain = allocateStataMatrix("brain");
-	matrix layer = allocateStataMatrix("layer");
-	cube neuron = allocateCube(SF_col("neuron"),1,threads);
-	cube input = allocateCopyCube(allocateStataMatrix("input"),threads);
-	cube output = allocateCopyCube(allocateStataMatrix("output"),threads);
-	icols = matcols(input[1]);
-	if (inp < 1 || inp > icols) inp = 0;
-	#pragma omp parallel for private(thread,obs) num_threads(threads)
-	for (i = 1; i <= N; i++)
-	{	thread = omp_get_thread_num()+1;
-		obs = sel[i][1];
-		loadStataRow(input[thread][3], obs, 1, 0);
-		value2signal(input[thread]);
-		input2neuron(input[thread], neuron[thread]);
-		if (inp >= 1) neuron[thread][1][inp] = 0;
-		forward(layer, neuron[thread], brain);
-		neuron2output(neuron[thread], output[thread]);
-		signal2value(output[thread]);
-		saveStataRow(output[thread][3], obs, icols+1, 0);
-	}
-	destroyMatrix(sel);
-	destroyCube(input);
-	destroyCube(output);
-	destroyCube(neuron);
-	destroyMatrix(layer);
-	destroyMatrix(brain);
-	sprintf(result, "%d", N); 
-}
-
 void brainerrorSP(char *result)
 {	double weight;
 	matrix brain = allocateStataMatrix("brain");
@@ -249,48 +212,6 @@ void brainerrorSP(char *result)
 	destroyMatrix(input);
 	destroyMatrix(output);
 	destroyMatrix(neuron);
-	destroyMatrix(layer);
-	destroyMatrix(brain);
-	sprintf(result, "%.9f %d",error, N);
-}
-
-void brainerrorMP(char *result)
-{	double weight, err, error, wsum;
-	int N, ocols, icols, i, obs, thread;
-	int threads = omp_get_num_procs();
-	matrix sel = selectedObs();
-	N = matrows(sel);
-	if (N < threads) threads = N;
-	if (threads < 1) threads = 1;
-	matrix brain = allocateStataMatrix("brain");
-	matrix layer = allocateStataMatrix("layer");
-	cube neuron = allocateCube(SF_col("neuron"),1,threads);
-	cube input = allocateCopyCube(allocateStataMatrix("input"),threads);
-	cube output = allocateCopyCube(allocateStataMatrix("output"),threads);
-	ocols = matcols(output[1]);
-	icols = matcols(input[1]);
-	error = 0;
-	wsum = 0;
-	#pragma omp parallel for private(thread,obs,weight,err) reduction(+:error,wsum) num_threads(threads)
-	for (i = 1; i <= N; i++)
-	{	thread = omp_get_thread_num()+1;
-		obs = sel[i][1];
-		loadStataRow(input[thread][3], obs, 1, 0);
-		loadStataRow(output[thread][3], obs, icols+1, 0);
-		SF_vdata(icols+ocols+1, obs, &weight);
-		value2signal(input[thread]);
-		value2signal(output[thread]);
-		input2neuron(input[thread], neuron[thread]);
-		forward(layer, neuron[thread], brain);
-		err = errsum(output[thread], neuron[thread]) * weight;
-		error += err;
-		wsum += weight;
-	}
-	error = error/wsum/ocols;
-	destroyMatrix(sel);
-	destroyCube(input);
-	destroyCube(output);
-	destroyCube(neuron);
 	destroyMatrix(layer);
 	destroyMatrix(brain);
 	sprintf(result, "%.9f %d",error, N);
@@ -357,79 +278,11 @@ void braintrainSP(char *result, double eta, int batch, int iter, int shuffle)
 	sprintf(result, "%d", N);
 }
 
-void braintrainMP(char *result, double eta, int batch, int iter, int shuffle)
-{	int thread, i, j, k, l, b, obs, icols, ocols, bcols, N;
-	double weight, *B;
-	int threads = omp_get_num_procs();
-	if (batch <= 0) batch = 1;
-	if (threads > batch) threads = batch;
-	matrix sel = selectedObs();
-	N = matrows(sel);
-	if (N < threads) threads = N;
-	if (threads < 1) threads = 1;
-	matrix brain = allocateStataMatrix("brain");
-	matrix layer = allocateStataMatrix("layer");
-	cube input = allocateCopyCube(allocateStataMatrix("input"),threads);
-	cube output = allocateCopyCube(allocateStataMatrix("output"),threads);
-	cube neuron = allocateCube(SF_col("neuron"),1,threads);
-	cube err = allocateCube(matcols(neuron[1])-matcols(input[1]),1,threads);
-	icols = matcols(input[1]);
-	ocols = matcols(output[1]);
-	bcols = matcols(brain);
-	cube delta = allocateCube(bcols,1,threads);
-	B = brain[1];
-	for (i = 1;  i <= iter; i++)
-	{	if (shuffle)
-		{	shuffleMatrix(sel);
-		}
-		for (j = 0; j < N; j += batch)
-		{	if (N-j >= batch)
-			{	b = batch;
-			}
-			else
-			{	b = N-j;
-			}
-			#pragma omp parallel num_threads(threads)
-			{	setMatrix(delta[omp_get_thread_num() + 1], 0);
-			}
-			#pragma omp parallel for private(thread,obs,weight) num_threads(threads)
-			for (k = 1; k <= b; k++)
-			{	thread = omp_get_thread_num()+1;
-				obs = sel[j+k][1];
-				loadStataRow(input[thread][3], obs, 1, 0);
-				loadStataRow(output[thread][3], obs, icols+1, 0);
-				SF_vdata(icols+ocols+1, obs, &weight);
-				value2signal(input[thread]);
-				value2signal(output[thread]);
-				input2neuron(input[thread], neuron[thread]);
-				forward(layer, neuron[thread], brain);
-				backward(layer, output[thread], neuron[thread], brain, weight, err[thread], delta[thread]);
-			}
-			#pragma omp parallel for private(l) num_threads(threads)
-			for (k = 1; k <= bcols; k++)
-			{	for (l = 1; l <= threads; l++)
-				{	B[k] += delta[l][1][k] * eta;
-				}
-			}
-		}
-	}
-	storeStataMatrix(brain, "brain");
-	destroyMatrix(sel);
-	destroyCube(delta);
-	destroyCube(err);
-	destroyCube(neuron);
-	destroyCube(output);
-	destroyCube(input);
-	destroyMatrix(layer);
-	destroyMatrix(brain);
-	sprintf(result, "%d", N);
-}
-
 STDLL stata_call(int argc, char *argv[])
 {	char result[254];
 	result[0] = '\0';
 	if (argc == 0)
-	{	sprintf(result, "%s %d", "2020.12.08", omp_get_num_procs());
+	{	sprintf(result, "%s %d", "2020.12.08", 1);
 	}
 	else if (strcmp(argv[0],"forward") == 0)
 	{	if (argc < 2) brainforward(0);
@@ -440,20 +293,20 @@ STDLL stata_call(int argc, char *argv[])
 		else brainsignalSP(result, (int) atof(argv[1]));
 	}
 	else if (strcmp(argv[0],"thinkMP") == 0)
-	{	if (argc < 2) brainsignalMP(result, 0);
-		else brainsignalMP(result, (int) atof(argv[1]));
+	{	if (argc < 2) brainsignalSP(result, 0);
+		else brainsignalSP(result, (int) atof(argv[1]));
 	}
 	else if (strcmp(argv[0],"trainSP") == 0)
 	{	braintrainSP(result, atof(argv[1]), (int) atof(argv[2]), (int) atof(argv[3]), (int) atof(argv[4]));
 	}
 	else if (strcmp(argv[0],"trainMP") == 0)
-	{	braintrainMP(result, atof(argv[1]), (int) atof(argv[2]), (int) atof(argv[3]), (int) atof(argv[4]));
+	{	braintrainSP(result, atof(argv[1]), (int) atof(argv[2]), (int) atof(argv[3]), (int) atof(argv[4]));
 	}
 	else if (strcmp(argv[0],"errorSP") == 0)
 	{	brainerrorSP(result);
 	}
 	else if (strcmp(argv[0],"errorMP") == 0)
-	{	brainerrorMP(result);
+	{	brainerrorSP(result);
 	}
 	if (result[0] != '\0') SF_macro_save("_plugin", result);
 	return(0);

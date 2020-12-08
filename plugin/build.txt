@@ -1,0 +1,14 @@
+WINDOWS PLUGIN
+Use Microsoft Visual Studio (Community) or other native compiler for brainwin.plugin instead of mingw (cygwin).
+mingw produces slower multi-threading code for windows platforms and requires additional dlls.
+If you still have to use mingw, you have to add follwing files to plugin folder:
+libgomp-1.dll, libwinpthread-1.dll, libgcc_s_seh-1.dll (search in cygwin installation)
+> x86_64-w64-mingw32-gcc -Wall -shared -fPIC -fopenmp -DSYSTEM=STWIN64 brain.c stata.c stplugin.c -o brainwin.plugin
+
+UNIX PLUGIN
+> gcc -shared -fopenmp -fPIC -DSYSTEM=OPUNIX brain.c stata.c stplugin.c -o brainunix.plugin
+
+MAC PLUGIN
+> gcc -shared -fopenmp -fPIC -DSYSTEM=APPLEMAC brain.c stata.c stplugin.c -o brainmac.plugin
+
+Exchange "brain.c" with "brainsp.c" and remove "-fopenmp" to switch to single-processing in case openmp is not supported.
