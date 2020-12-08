@@ -154,6 +154,7 @@ program define brain, rclass
 		if `"`1'"' != "" {
 			di error 198
 		}
+		tempvar touse
 		local inp = wordcount(`"`input'"')
 		local out = wordcount(`"`output'"')
 		local hidden = `"`inp' `hidden' `out'"'
@@ -185,67 +186,51 @@ program define brain, rclass
 			matrix drop layer
 			error 999
 		}
+		marksample touse
+		local raw = "`raw'" != ""
 		local cols = layer[1,1]
-		mata: st_matrix("input", J(4,`cols',0))
-		local i = 1
-		if "`raw'" == "" {
-			foreach v of varlist `input' {
-				qui sum `v' `if' `in'
-				matrix input[1,`i'] = r(min)
-				matrix input[2,`i'] = 1 / (r(max) - r(min))
-				if input[2,`i'] == . {
-					matrix input[2,`i'] = 1
+		local v = ""
+		mata: _brainnorm("input", "`input'", "`touse'", `raw')
+		forvalue i = 1/`cols' {
+			if `raw' & (input[1,`i'] != 0 | input[2,`i'] != 1) | `raw' == 0 & (input[1,`i'] == . | input[2,`i'] == .) {
+				local v = word("`input'", `i')
+				if `raw' {
+					di as error "raw input variable `v' is violating the [0,1] range"
 				}
-				local i = `i'+1
+				else {
+					di as error "input variable `v' is undefined"
+				}
 			}
 		}
-		else {	
-			foreach v of varlist `input' {
-				qui sum `v' `if' `in'
-				if r(min) < 0 | r(max) > 1 {
-					di as error "raw input variable `v' is violating the [0,1] range"
-					matrix drop input
-					error 999
-				}
-				matrix input[1,`i'] = 0
-				matrix input[2,`i'] = 1
-				local i = `i'+1
-			}
+		if "`v'" != "" {
+			matrix drop layer
+			matrix drop input
+			error 999
 		}
 		matrix colnames input = `input'
 		matrix rownames input = min norm value signal
 		local cols = layer[1,colsof(layer)]
-		mata: st_matrix("output", J(4,`cols',0))
-		local i = 1
-		if "`raw'" == "" {
-			foreach v of varlist `output' {
-				qui sum `v' `if' `in'
-				matrix output[1,`i'] = r(min)
-				matrix output[2,`i'] = 1 / (r(max) - r(min))
-				if output[2,`i'] == . {
-					matrix output[2,`i'] = 1
+		mata: _brainnorm("output", "`output'", "`touse'", `raw')
+		forvalue i = 1/`cols' {
+			if `raw' & (output[1,`i'] != 0 | output[2,`i'] != 1) | `raw' == 0 & (output[1,`i'] == . | output[2,`i'] == .) {
+				local v = word("`output'", `i')
+				if `raw' {
+					di as error "raw output variable `v' is violating the [0,1] range"
 				}
-				local i = `i'+1
+				else {
+					di as error "output variable `v' is undefined"
+				}
 			}
 		}
-		else {
-			foreach v of varlist `output' {
-				qui sum `v' `if' `in'
-				if r(min) < 0 | r(max) > 1 {
-					di as error "raw output variable `v' is violating the [0,1] range"
-					matrix drop input
-					matrix drop output
-					error 999
-				}
-				matrix output[1,`i'] = 0
-				matrix output[2,`i'] = 1
-				local i = `i'+1
-			}
+		if "`v'" != "" {
+			matrix drop layer
+			matrix drop input
+			matrix drop output
+			error 999
 		}
 		matrix colnames output = `output'
 		matrix rownames output = min norm value signal
-		braincreate
-		braininit `spread'
+		braincreate `spread'
 		di as text "defined matrices:"
 		braindir
 		exit
@@ -342,39 +327,17 @@ program define brain, rclass
 		local len = `bin'
 		file read `load' %`len's str
 		local layer = layer[1,1]
-		mata: st_matrix("input", J(4,`layer',0))
+		mata: _brainload("input", `layer', 4, 2, "`load'", "`bin'")
 		matrix colnames input = `str'
 		matrix rownames input = min norm value signal
-		forvalue i = 1/`layer' {
-			file read `load' %8z `bin'
-			matrix input[1,`i'] = `bin'
-			file read `load' %8z `bin'
-			matrix input[2,`i'] = `bin'
-		}
 		file read `load' %4bu `bin'
 		local len = `bin'
 		file read `load' %`len's str
 		local layer = layer[1,colsof(layer)]
-		mata: st_matrix("output", J(4,`layer',0))
+		mata: _brainload("output", `layer', 4, 2, "`load'", "`bin'")
 		matrix colnames output = `str'
 		matrix rownames output = min norm value signal
-		forvalue i = 1/`layer' {
-			file read `load' %8z `bin'
-			matrix output[1,`i'] = `bin'
-			file read `load' %8z `bin'
-			matrix output[2,`i'] = `bin'
-		}
-		braincreate
-		local size = colsof(brain)
-		forvalue i = 1/`size' {
-			file read `load' %8z `bin'
-			if r(eof) {
-				di as error "invalid file format"
-				file close `load'
-				error 999
-			}
-			matrix brain[1,`i'] = `bin'
-		}
+		braincreate `load'
 		file read `load' %8z `bin'  // there should be no leftovers
 		if r(eof) == 0 {
 			di as error "invalid file format"
@@ -408,16 +371,7 @@ program define brain, rclass
 				error 999
 			}
 		}
-		if `raw' {
-			forvalue i = 1/`isize' {
-				matrix input[4,`i'] = ``i''
-			}
-		}
-		else {
-			forvalue i = 1/`isize' {
-				matrix input[3,`i'] = ``i''
-			}
-		}
+		mata: _brainfeed(`"`*'"', `raw')
 		plugin call brainiac, forward `raw'
 		matrix `output' = output[3..4,1...]
 		matrix list `output', noheader format(%18.9f)
@@ -766,7 +720,8 @@ end
 
 cap program drop braincreate
 program define braincreate
-	tempname names
+	tempname names binary
+	local handle = "`1'"
 	local size = 0
 	local layer = colsof(layer)
 	scalar `names' = ""
@@ -788,7 +743,17 @@ program define braincreate
 			scalar `names' = `names' + " `prefix'`n'b"
 		}
 	}
-	mata: st_matrix("brain", J(1,`size',0))
+	if "`handle'" != "" {
+		if real("`handle'") == . {
+			mata: _brainload("brain", `size', 1, 1, "`handle'", "`binary'")
+		}
+		else {
+			mata: _braininit(`size', `handle')
+		}
+	}
+	else {
+		mata: st_matrix("brain", J(1,`size',0))
+	}
 	local cnames = scalar(`names')
 	scalar `names' = ""
 	matrix colnames brain = `cnames'
@@ -828,21 +793,6 @@ program define braincreate
 	matrix rownames neuron = signal
 end	
 
-cap program drop braininit
-program define braininit
-	local spread = abs(`1')
-	local range = `spread'*2
-	local b = 1
-	cap local size = colsof(brain`b')
-	while _rc == 0 {
-		forvalue i = 1/`size' {
-			matrix brain`b'[1,`i'] = uniform()*`range'-`spread'
-		}
-		local b = `b'+1
-		cap local size = colsof(brain`b')
-	}
-end	
-
 cap program drop brainweight
 program define brainweight
 	local w = "`1'"
@@ -860,4 +810,66 @@ program define brainweight
 		}
 		qui replace `w' = `w'/r(max)
 	}
+end
+
+mata:
+
+void _brainload(string scalar name, real scalar cols, real scalar rows, real scalar userows, string scalar handle, string scalar bin)
+{	real matrix brain
+	real scalar i, j, val
+	
+	brain = J(rows, cols, 0)
+	for (i = 1; i <= cols; i++)
+	{	for (j = 1; j <= userows; j++)
+		{	stata("file read "+handle+" %8z "+bin)
+			brain[j,i] = st_numscalar(bin)
+		}
+	}
+	st_matrix(name, brain)
+}
+
+void _braininit(real scalar size, real scalar spread)
+{	real matrix brain
+	real scalar range
+	
+	spread = abs(spread)
+	range = spread*2
+	brain = runiform(1, size) :* range :- spread
+	st_matrix("brain", brain)
+}
+
+void _brainnorm(string scalar name, string scalar vars, string scalar touse, real scalar raw)
+{	real matrix N, D
+	real rowvector min, max
+	real scalar cols
+	
+	cols = cols(tokens(vars))
+	st_view(D=., ., vars, touse)
+	N = J(4,cols,0)
+	min = colmin(D)
+	max = colmax(D)
+	if (raw > 0)
+	{	N[1,.] = min :< 0 
+		N[2,.] = max :<= 1
+	}
+	else {
+		N[1,.] = min
+		N[2,.] = 1 :/ (max :- min)
+	}
+	st_matrix(name, N)
+}
+
+void _brainfeed(string scalar values, real scalar raw)
+{	real matrix I
+	
+	I = st_matrix("input")
+	if (raw > 0)
+	{	I[4,.] = strtoreal(tokens(values))
+	}
+	else
+	{	I[3,.] = strtoreal(tokens(values))
+	}
+	st_matrix("input", I)
+}
+
 end

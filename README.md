@@ -1,4 +1,4 @@
-# brain - neural network
+# brain - neural network for STATA
 **brain** is a no frills implementation of a backpropagation algorithm designed for a hassle free setup of multi-layered neural networks. After training the whole network can be saved/loaded using so called brain-files (default postfix .brn). The network is represented by a set of reserved matrices to provide transparent access to all components and to support older Stata versions. Additional functions facilitate the calculation of pseudo-marginal effects or signal through-put, but the main utility is of course prediction, i.e. for propensity scores or classification.
 
 ## Prerequisites
@@ -9,10 +9,17 @@ STATA
 * Call the help file within STATA: help brain
 * Try out the examples provided by the help document by copying them into do-files
 
-## Unix and Mac plugins not working
-The Unix and Mac plugins don't work because I was not able to link the OpenMP libraries (lipgomp.so.1) into the plugins. If somebody has experience about how to handle those libraries please mail to: **doherr@zew.de**
+## Unix and Mac plugins
+The UNIX and MAC plugins do not support multiprocessing because of the erratic support of **openmp** between the distributions. To activate **openmp** the plugins need to be locally compiled (see: plugin/build.txt for instructions).
+The **brain.c** source code contains MP support, while **brainsp.c** renounces any **openmp** references. 
+NOTICE: The MAC plugin doesn't work until I get access to a MAC machine.
 
 ## Version history
+2020.12.08
+* Improved compatibility with older STATA versions (below 15) in terms of matrix sizes
+* Fixed a bug that prevented random weight initialization 
+* Recompiled the UNIX plugin to exclude **openmp** libraries because of incompatible distributions.
+
 2020.11.30
 * Fixed a bug that prevented the usage of the **fit** command without a second variable.
 * The **fit** function allows the specification of a threshold for binary one.

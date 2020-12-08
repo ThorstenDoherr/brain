@@ -1,5 +1,5 @@
 {smcl}
-{* 15oct2020}{...}
+{* 08dec2020}{...}
 {hline}
 help for {hi:brain}
 {hline}
@@ -133,6 +133,14 @@ r({hi:Fprecision}) precision for false: TN/(TN+FN){break}
 r({hi:accuracy}) accurary: (TP+TN)/(TP+TN+FP+FN){break}
 r({hi:threshold}) threshold for binary one
 
+{title:Compatibility and Multiprocessing}
+
+{p}Except for the {cmd:margin} and {cmd:signal} commands {hi:brain} fully supports older STATA Versions (tested for STATA 13). The before mentioned commands still work for older version
+but are limited to a maximum of 11000 input respectively output variables.{p_end}
+{p}Given the unclear situation of the inclusion of {hi:openmp} of the different {hi:UNIX} distributions including {hi:MacOS}, the corresponding plugins do not support
+multiprocessing. Only the {hi:Windows} plugin benefits from multiprocessing. Please consult the Github page of the author (see below) to enable multiprocessing for the other OS
+by locally compiling the source.{p_end}
+
 {title:Performance and Multiprocessing}
 
 {p}{cmd:brain} uses C plugins supporting multiprocessing (the parallel usage of multiple processors/cores). While some of the commands, e.g. {cmd:error}
@@ -164,7 +172,7 @@ between single- and multiprocessing (see Example 2).
     egen rreg = sum((y-yreg)^2)
 
     brain define, input(x1 x2) output(y) hidden(10 10)
-    brain train, iter(500) eta(1) sp
+    brain train, iter(1000) eta(1) sp
     brain think ybrain
 
     egen rbrain = sum((y-ybrain)^2)
@@ -313,6 +321,10 @@ between single- and multiprocessing (see Example 2).
 
 {title:Update History}
 
+{p 0 11}{hi:2020.12.08} Improved compatibility with older STATA versions (below 15) in terms of matrix sizes.{break}
+Fixed a bug that prevented random weight initialization.{break}
+Recompiled the UNIX plugin to exclude {hi:openmp} libraries because of incompatible distributions.
+
 {p 0 11}{hi:2020.11.30} Fixed a bug that prevented the usage of the {hi:fit} command without a second variable.{break}
 The {hi:fit} function allows the specification of a threshold for binary one.
 
@@ -351,7 +363,6 @@ Centre for European Economic Research{break}
 L7,1{break}
 68161 Mannheim{break}
 Germany{break}
-Phone: +49 621 1235 291{break}
-Fax: +49 621 1235 170{break}
 E-Mail: doherr@zew.de{break}
-Internet: www.zew.de
+Internet: https://www.zew.de{break}
+Github: https://github.com/ThorstenDoherr/brain
