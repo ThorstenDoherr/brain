@@ -10,12 +10,15 @@ STATA
 * Try out the examples provided by the help document by copying them into do-files
 
 ## Unix and Mac plugins
-The UNIX and MAC plugins do not support multiprocessing because of the erratic support of **openmp** between the distributions. To activate **openmp** the plugins need to be locally compiled (see: plugin/build.txt for instructions).
+The UNIX and MAC plugins do not support multiprocessing because of the erratic support of **openmp** among the distributions. To activate **openmp** the plugins need to be locally compiled (see: plugin/build.txt for instructions).
 The **brain.c** source code contains MP support, while **brainsp.c** renounces any **openmp** references. 
 
-NOTICE: The MAC plugin may not work as it was compiled on a UNIX machine.
+NOTICE: The MAC plugin is not yet tested.
 
 ## Version history
+2021.02.16
+* Recompiled the MAC plugin to exclude **openmp** libraries because of incompatible distributions.
+
 2020.12.08
 * Improved compatibility with older STATA versions (below 15) in terms of matrix sizes
 * Fixed a bug that prevented random weight initialization 
