@@ -1,5 +1,5 @@
 {smcl}
-{* 08dec2020}{...}
+{* 16feb2021}{...}
 {hline}
 help for {hi:brain}
 {hline}
@@ -321,6 +321,8 @@ between single- and multiprocessing (see Example 2).
 
 {title:Update History}
 
+{p 0 11}{hi:2021.16.02} Recompiled the MAC plugin to exclude {hi:openmp} libraries because of incompatible distributions.
+
 {p 0 11}{hi:2020.12.08} Improved compatibility with older STATA versions (below 15) in terms of matrix sizes.{break}
 Fixed a bug that prevented random weight initialization.{break}
 Recompiled the UNIX plugin to exclude {hi:openmp} libraries because of incompatible distributions.
@@ -354,7 +356,7 @@ New command {hi:error} reports the overall absolute error instead of using the {
 
 {title:Acknowledgements}
 
-I thank my colleague {hi:Robert Braeutigam} for enabling the Unix and Mac plugin versions.
+I thank my colleague {hi:Robert Braeutigam} for facilitating the Unix and Mac plugin versions.
 
 {title:Author}
 
