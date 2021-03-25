@@ -1,5 +1,5 @@
 {smcl}
-{* 16feb2021}{...}
+{* 25mar2021}{...}
 {hline}
 help for {hi:brain}
 {hline}
@@ -115,7 +115,7 @@ The function will use multiprocessing unless single processing is enforced with 
 Stored results:{break}
 r({hi:margin}) matrix of input variables on marginal output signals
 
-{p 0 4}{cmd:brain {ul:fi}t} {it:original_binary_var} [{it:predicted_var}] [{ul:th}({it:default = 0.5})]{break}
+{p 0 4}{cmd:brain {ul:fi}t} {it:original_binary_var} [{it:predicted_var}], [{ul:sp}] [{ul:th}({it:default = 0.5})]{break}
 reports precision and recall rates for a binary variable based on the prediction of the neural network or a specified predicted variable. The predictied variable can
 be omitted for univariate output. This convenient function can also be used ouside the context of brain predictions, i.e. comparing results of probit regressions. Option
 {cmd:th} defines the threshold for binary one.{break}
