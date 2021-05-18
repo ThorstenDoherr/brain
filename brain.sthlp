@@ -1,5 +1,5 @@
 {smcl}
-{* 25mar2021}{...}
+{* 18may2021}{...}
 {hline}
 help for {hi:brain}
 {hline}
@@ -7,6 +7,10 @@ help for {hi:brain}
 {title:Neural Network}
 
 {p 8}{cmd:brain {ul:de}fine} [{it:if}] [{it:in}], {ul:in}put({it:varlist}) {ul:o}utput({it:varlist}) [{ul:h}idden({it:numlist})] [{ul:s}pread({it:default = 0.25})] [{ul:r}aw]
+
+{p 8}{cmd:brain {ul:no}rm} {it:varlist} [{it:if}] [{it:in}], [{ul:r}aw]
+
+{p 8}{cmd:brain {ul:re}set}, [{ul:s}pread({it:default = 0.25})]
 
 {p 8}{cmd:brain {ul:sa}ve} {it:filename}
 
@@ -57,6 +61,13 @@ active data. The normalization can be ignored by applying the {hi:raw} parameter
 [0,1]. This is usefull for already normalized data. The {hi:hidden} layers can be omitted, leading to a simple perceptron. If specified, every number
 defines a hidden layer of the corresponding size starting at the input layer. The starting values of the synapses are randomly distributed between
 [-{hi:spread}, +{hi:spread}]. 
+
+{p 0 4}{cmd:brain {ul:no}rm} {it:varlist}, [{ul:r}aw]{break}
+normalizes specified output and/or input variables separately after an initial definition with {cmd:define}. This is useful to reset variables, which are
+interdependent, e.g. shares summing up to 1, to {cmd:raw} (see {cmd:define}), while other variables stay unaffected.
+
+{p 0 4}{cmd:brain {ul:re}set}, [{ul:s}pread({it:default = 0.25})]{break}
+the weights of an existing network ({hi:brain} matrix) are initialized according to the {hi:spread} parameter nullifying all training efforts.
 
 {p 0 4}{cmd:brain {ul:sa}ve} {it:filename}{break}
 save the neural network matrizes into a file. Default postfix is ".brn".
@@ -320,6 +331,10 @@ between single- and multiprocessing (see Example 2).
 {text}
 
 {title:Update History}
+
+{p 0 11}{hi:2021.18.05} The new {hi:norm} command allows for specific normalization of groups of variables.{break}
+New command {hi:reset} re-initilializes the weights of the {hi:brain} without redefining the normalization.{break}
+Default {hi:spread} set from 0.5 to 0.25, as specified in the help file.
 
 {p 0 11}{hi:2021.16.02} Recompiled the MAC plugin to exclude {hi:openmp} libraries because of incompatible distributions.
 

@@ -148,11 +148,11 @@ program define brain, rclass
 		exit
 	}
 	if `"`cmd'"' == substr("define",1,`cmdlen') {
-		syntax anything(id=command) [if] [in], INput(varlist) Output(varlist) [Hidden(numlist)] [Spread(real 0.5)] [Raw]
+		syntax anything(id=command) [if] [in], INput(varlist) Output(varlist) [Hidden(numlist)] [Spread(real 0.25)] [Raw]
 		token `"`anything'"'
 		macro shift
 		if `"`1'"' != "" {
-			di error 198
+			error 198
 		}
 		tempvar touse
 		local inp = wordcount(`"`input'"')
@@ -235,6 +235,119 @@ program define brain, rclass
 		braindir
 		exit
 	}
+	if `"`cmd'"' == substr("reset",1,`cmdlen') {
+		syntax anything(id=command) [if] [in], [Spread(real 0.25)]
+		token `"`anything'"'
+		macro shift
+		if `"`1'"' != "" {
+			error 198
+		}
+		braincheck
+		braincreate `spread'
+		exit
+	}
+	if `"`cmd'"' == substr("norm",1,`cmdlen') {
+		syntax anything(id=command) [if] [in], [Raw]
+		token `"`anything'"'
+		macro shift
+		if `"`1'"' == "" {
+			error 198
+		}
+		braincheck
+		tempvar touse
+		tempname chk output input update
+		scalar `output' = ""
+		scalar `input' = ""
+		foreach v of varlist `*' {
+			cap matrix `chk' = input[1,"`v'"]
+			if _rc != 0 {
+				cap matrix `chk' = output[1,"`v'"]
+				if _rc != 0 {
+					di as error "variable `v' is not used by brain"
+					error 999
+				}
+				else {
+					scalar `output' = `output' + " `v'"
+				}
+			}
+			else {
+				scalar `input' = `input' + " `v'"
+			}
+		}
+		local output = trim(scalar(`output'))
+		local input = trim(scalar(`input'))
+		marksample touse
+		local raw = "`raw'" != ""
+		if "`input'" != "" {
+			mata: _brainnorm("`update'", "`input'", "`touse'", `raw')
+			local cols = colsof(`update')
+			local v = ""
+			forvalue i = 1/`cols' {
+				if `raw' & (`update'[1,`i'] != 0 | `update'[2,`i'] != 1) | `raw' == 0 & (`update'[1,`i'] == . | `update'[2,`i'] == .) {
+					local v = word("`input'",`i')
+					if `raw' {
+						di as error "raw input variable `v' is violating the [0,1] range"
+					}
+					else {
+						di as error "input variable `v' is undefined"
+					}
+				}
+			}
+			if "`v'" != "" {
+				di as error "original input layer restored"
+				error 999
+			}
+			local names : colnames input
+			token `"`names'"'
+			forvalue i = 1/`cols' {
+				local v = word("`input'",`i')
+				local j = 1
+				while "``j''" != "" {
+					if "``j''" == "`v'" {
+						matrix input[1,`j'] = `update'[1,`i']
+						matrix input[2,`j'] = `update'[2,`i']
+						continue, break
+					}
+					local j = `j'+1
+				}
+			}
+		}
+		if "`output'" != "" {
+			mata: _brainnorm("`update'", "`output'", "`touse'", `raw')
+			local cols = colsof(`update')
+			local v = ""
+			forvalue i = 1/`cols' {
+				if `raw' & (`update'[1,`i'] != 0 | `update'[2,`i'] != 1) | `raw' == 0 & (`update'[1,`i'] == . | `update'[2,`i'] == .) {
+					local v = word("`output'",`i')
+					if `raw' {
+						di as error "raw output variable `v' is violating the [0,1] range"
+					}
+					else {
+						di as error "output variable `v' is undefined"
+					}
+				}
+			}
+			if "`v'" != "" {
+				di as error "original output layer restored"
+				error 999
+			}
+			local names : colnames output
+			token `"`names'"'
+			forvalue i = 1/`cols' {
+				local v = word("`output'",`i')
+				local j = 1
+				while "``j''" != "" {
+					if "``j''" == "`v'" {
+						matrix output[1,`j'] = `update'[1,`i']
+						matrix output[2,`j'] = `update'[2,`i']
+						continue, break
+					}
+					local j = `j'+1
+				}
+			}
+		}
+		exit
+	}
 	if `"`cmd'"' == substr("save",1,`cmdlen') {
 		syntax anything(id=command)
 		token `"`anything'"'
@@ -244,7 +357,7 @@ program define brain, rclass
 			error 999
 		}
 		if `"`2'"' != "" {
-			di error 198
+			error 198
 		}
 		local using = `"`1'"'
 		braincheck
@@ -296,7 +409,7 @@ program define brain, rclass
 			error 999
 		}
 		if `"`2'"' != "" {
-			di error 198
+			error 198
 		}
 		local using = `"`1'"'
 		tempname load bin
