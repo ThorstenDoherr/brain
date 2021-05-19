@@ -148,11 +148,17 @@ program define brain, rclass
 		exit
 	}
 	if `"`cmd'"' == substr("define",1,`cmdlen') {
-		syntax anything(id=command) [if] [in], INput(varlist) Output(varlist) [Hidden(numlist)] [Spread(real 0.25)] [Raw]
+		syntax anything(id=command) [if] [in], INput(varlist) Output(varlist) [Hidden(numlist)] [Spread(real 0.25)] [Raw] [Nonorm]
 		token `"`anything'"'
 		macro shift
 		if `"`1'"' != "" {
 			error 198
+		}
+		local raw = "`raw'" != ""
+		local nonorm = "`nonorm'" != ""
+		if `raw' & `nonorm' {
+			di as error "option raw and nonorm are mutually exclusive"
+			error 999
 		}
 		tempvar touse
 		local inp = wordcount(`"`input'"')
@@ -187,46 +193,56 @@ program define brain, rclass
 			error 999
 		}
 		marksample touse
-		local raw = "`raw'" != ""
 		local cols = layer[1,1]
-		local v = ""
-		mata: _brainnorm("input", "`input'", "`touse'", `raw')
-		forvalue i = 1/`cols' {
-			if `raw' & (input[1,`i'] != 0 | input[2,`i'] != 1) | `raw' == 0 & (input[1,`i'] == . | input[2,`i'] == .) {
-				local v = word("`input'", `i')
-				if `raw' {
-					di as error "raw input variable `v' is violating the [0,1] range"
-				}
-				else {
-					di as error "input variable `v' is undefined"
+		if `nonorm' {
+			matrix input = J(1, `cols', 0)\J(1, `cols', 1)\J(2, `cols', 0)
+		}
+		else {
+			local v = ""
+			mata: _brainnorm("input", "`input'", "`touse'", `raw')
+			forvalue i = 1/`cols' {
+				if `raw' & (input[1,`i'] != 0 | input[2,`i'] != 1) | `raw' == 0 & (input[1,`i'] == . | input[2,`i'] == .) {
+					local v = word("`input'", `i')
+					if `raw' {
+						di as error "raw input variable `v' is violating the [0,1] range"
+					}
+					else {
+						di as error "input variable `v' is undefined"
+					}
 				}
 			}
-		}
-		if "`v'" != "" {
-			matrix drop layer
-			matrix drop input
-			error 999
+			if "`v'" != "" {
+				matrix drop layer
+				matrix drop input
+				error 999
+			}
 		}
 		matrix colnames input = `input'
 		matrix rownames input = min norm value signal
 		local cols = layer[1,colsof(layer)]
-		mata: _brainnorm("output", "`output'", "`touse'", `raw')
-		forvalue i = 1/`cols' {
-			if `raw' & (output[1,`i'] != 0 | output[2,`i'] != 1) | `raw' == 0 & (output[1,`i'] == . | output[2,`i'] == .) {
-				local v = word("`output'", `i')
-				if `raw' {
-					di as error "raw output variable `v' is violating the [0,1] range"
-				}
-				else {
-					di as error "output variable `v' is undefined"
+		if `nonorm' {
+			matrix output = J(1, `cols', 0)\J(1, `cols', 1)\J(2, `cols', 0)
+		}
+		else {
+			local v = ""
+			mata: _brainnorm("output", "`output'", "`touse'", `raw')
+			forvalue i = 1/`cols' {
+				if `raw' & (output[1,`i'] != 0 | output[2,`i'] != 1) | `raw' == 0 & (output[1,`i'] == . | output[2,`i'] == .) {
+					local v = word("`output'", `i')
+					if `raw' {
+						di as error "raw output variable `v' is violating the [0,1] range"
+					}
+					else {
+						di as error "output variable `v' is undefined"
+					}
 				}
 			}
-		}
-		if "`v'" != "" {
-			matrix drop layer
-			matrix drop input
-			matrix drop output
-			error 999
+			if "`v'" != "" {
+				matrix drop layer
+				matrix drop input
+				matrix drop output
+				error 999
+			}
 		}
 		matrix colnames output = `output'
 		matrix rownames output = min norm value signal
@@ -253,6 +269,8 @@ program define brain, rclass
 		if `"`1'"' == "" {
 			error 198
 		}
+		local raw = "`raw'" != ""
+		local noskip = "`skip'" == ""
 		braincheck
 		tempvar touse
 		tempname chk output input update
@@ -262,11 +280,7 @@ program define brain, rclass
 			cap matrix `chk' = input[1,"`v'"]
 			if _rc != 0 {
 				cap matrix `chk' = output[1,"`v'"]
-				if _rc != 0 {
-					di as error "variable `v' is not used by brain"
-					error 999
-				}
-				else {
+				if _rc == 0 {
 					scalar `output' = `output' + " `v'"
 				}
 			}
@@ -276,15 +290,19 @@ program define brain, rclass
 		}
 		local output = trim(scalar(`output'))
 		local input = trim(scalar(`input'))
+		if "`output'" == "" & "`input'" == "" {
+			di as error "varlist does not match any input or output variables"
+			error 999
+		}
 		marksample touse
-		local raw = "`raw'" != ""
 		if "`input'" != "" {
 			mata: _brainnorm("`update'", "`input'", "`touse'", `raw')
 			local cols = colsof(`update')
+			token `"`input'"'
 			local v = ""
 			forvalue i = 1/`cols' {
 				if `raw' & (`update'[1,`i'] != 0 | `update'[2,`i'] != 1) | `raw' == 0 & (`update'[1,`i'] == . | `update'[2,`i'] == .) {
-					local v = word("`input'",`i')
+					local v = `"``i''"'
 					if `raw' {
 						di as error "raw input variable `v' is violating the [0,1] range"
 					}
@@ -297,28 +315,27 @@ program define brain, rclass
 				di as error "original input layer restored"
 				error 999
 			}
+			matrix colnames `update' = `input'
 			local names : colnames input
 			token `"`names'"'
+			local cols = colsof(input)
 			forvalue i = 1/`cols' {
-				local v = word("`input'",`i')
-				local j = 1
-				while "``j''" != "" {
-					if "``j''" == "`v'" {
-						matrix input[1,`j'] = `update'[1,`i']
-						matrix input[2,`j'] = `update'[2,`i']
-						continue, break
-					}
-					local j = `j'+1
+				local v = "``i''"
+				cap matrix `chk' = `update'[1..2,"`v'"]
+				if _rc == 0 {
+					matrix input[1,`i'] = `chk'[1,1]
+					matrix input[2,`i'] = `chk'[2,1]
 				}
 			}
 		}
 		if "`output'" != "" {
 			mata: _brainnorm("`update'", "`output'", "`touse'", `raw')
 			local cols = colsof(`update')
+			token `"`output'"'
 			local v = ""
 			forvalue i = 1/`cols' {
 				if `raw' & (`update'[1,`i'] != 0 | `update'[2,`i'] != 1) | `raw' == 0 & (`update'[1,`i'] == . | `update'[2,`i'] == .) {
-					local v = word("`output'",`i')
+					local v = `"``i''"'
 					if `raw' {
 						di as error "raw output variable `v' is violating the [0,1] range"
 					}
@@ -331,18 +348,16 @@ program define brain, rclass
 				di as error "original output layer restored"
 				error 999
 			}
+			matrix colnames `update' = `output'
 			local names : colnames output
 			token `"`names'"'
+			local cols = colsof(output)
 			forvalue i = 1/`cols' {
-				local v = word("`output'",`i')
-				local j = 1
-				while "``j''" != "" {
-					if "``j''" == "`v'" {
-						matrix output[1,`j'] = `update'[1,`i']
-						matrix output[2,`j'] = `update'[2,`i']
-						continue, break
-					}
-					local j = `j'+1
+				local v = "``i''"
+				cap matrix `chk' = `update'[1..2,"`v'"]
+				if _rc == 0 {
+					matrix output[1,`i'] = `chk'[1,1]
+					matrix output[2,`i'] = `chk'[2,1]
 				}
 			}
 		}

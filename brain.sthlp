@@ -1,12 +1,12 @@
 {smcl}
-{* 18may2021}{...}
+{* 19may2021}{...}
 {hline}
 help for {hi:brain}
 {hline}
 
 {title:Neural Network}
 
-{p 8}{cmd:brain {ul:de}fine} [{it:if}] [{it:in}], {ul:in}put({it:varlist}) {ul:o}utput({it:varlist}) [{ul:h}idden({it:numlist})] [{ul:s}pread({it:default = 0.25})] [{ul:r}aw]
+{p 8}{cmd:brain {ul:de}fine} [{it:if}] [{it:in}], {ul:in}put({it:varlist}) {ul:o}utput({it:varlist}) [{ul:h}idden({it:numlist})] [{ul:s}pread({it:default = 0.25})] [{ul:r}aw | {ul:n}onorm]
 
 {p 8}{cmd:brain {ul:no}rm} {it:varlist} [{it:if}] [{it:in}], [{ul:r}aw]
 
@@ -55,16 +55,17 @@ r({hi:plugin}) used plugin{break}
 r({hi:version}) version date{break}
 r({hi:mp}) number of processors used for multiprocessing
 
-{p 0 4}{cmd:brain {ul:de}fine}, {ul:in}put({it:varlist}) {ul:o}utput({it:varlist}) [{ul:h}idden({it:numlist})] [{ul:s}pread({it:default = 0.25})] [{ul:r}aw]{break}
-defines the structure of the neural network. Parameters to normalize the {hi:input} and {hi:output} variables between [0,1] are determined based on the
-active data. The normalization can be ignored by applying the {hi:raw} parameter requiring all {hi:input} and {hi:ouput} variables to be in the range of
-[0,1]. This is usefull for already normalized data. The {hi:hidden} layers can be omitted, leading to a simple perceptron. If specified, every number
-defines a hidden layer of the corresponding size starting at the input layer. The starting values of the synapses are randomly distributed between
+{p 0 4}{cmd:brain {ul:de}fine}, {ul:in}put({it:varlist}) {ul:o}utput({it:varlist}) [{ul:h}idden({it:numlist})] [{ul:s}pread({it:default = 0.25})]  [{ul:r}aw | {ul:n}onorm]{break}
+defines the structure of the neural network. Parameters to normalize the {hi:input} and {hi:output} variables between [0,1] are determined based on the 
+active data. The normalization will be skipped if option {hi:raw} or {hi:nonorm} are specified. {hi:raw} still tests that all {hi:input} and {hi:ouput} 
+variables are in the range of [0,1], while [hi:nonorm] just assumes already normalized data without verification. This is usefull, if only selected variables require 
+normalization (see command {hi:norm}). The {hi:hidden} layers can be omitted, leading to a simple perceptron. If specified, every number defines 
+a hidden layer of the corresponding size starting at the input layer. The starting values of the synapses are randomly distributed between
 [-{hi:spread}, +{hi:spread}]. 
 
 {p 0 4}{cmd:brain {ul:no}rm} {it:varlist}, [{ul:r}aw]{break}
-normalizes specified output and/or input variables separately after an initial definition with {cmd:define}. This is useful to reset variables, which are
-interdependent, e.g. shares summing up to 1, to {cmd:raw} (see {cmd:define}), while other variables stay unaffected.
+subsequently normalizes specified output and/or input variables separately after an initial definition with {cmd:define}. This is useful to normalize only specific variables, while other
+variables, e.g. interdependent shares summing up to 1, stay {hi:raw} and vice versa. The varlist {hi:*} can be specified to normalize the whole network.
 
 {p 0 4}{cmd:brain {ul:re}set}, [{ul:s}pread({it:default = 0.25})]{break}
 the weights of an existing network ({hi:brain} matrix) are initialized according to the {hi:spread} parameter nullifying all training efforts.
@@ -332,7 +333,8 @@ between single- and multiprocessing (see Example 2).
 
 {title:Update History}
 
-{p 0 11}{hi:2021.18.05} The new {hi:norm} command allows for specific normalization of groups of variables.{break}
+{p 0 11}{hi:2021.19.05} The new {hi:norm} command allows for specific normalization of groups of variables.{break}
+The {hi:nonorm} option of the {hi:define} command skips nromalization and testing.{break}
 New command {hi:reset} re-initilializes the weights of the {hi:brain} without redefining the normalization.{break}
 Default {hi:spread} set from 0.5 to 0.25, as specified in the help file.
 
