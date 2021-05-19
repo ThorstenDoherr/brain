@@ -18,10 +18,10 @@ NOTICE: The MAC plugin is not yet tested.
 ## Version history
 
 2021.05.18
-The new **norm** command allows for specific normalization of groups of variables.
-The **nonorm** option of the **define** command skips normalization and testing.
-New command **reset** re-initilializes the weights without redefining the normalization.
-Default **spread** set from 0.5 to 0.25, as specified in the help file.
+* The new **norm** command allows for specific normalization of groups of variables.
+* The **nonorm** option of the **define** command skips normalization and testing.
+* New command **reset** re-initilializes the weights without redefining the normalization.
+* Default **spread** set from 0.5 to 0.25, as specified in the help file.
 
 2021.02.16
 * Recompiled the MAC plugin to exclude **openmp** libraries because of incompatible distributions.
