@@ -57,18 +57,20 @@ r({hi:mp}) number of processors used for multiprocessing
 
 {p 0 4}{cmd:brain {ul:de}fine}, {ul:in}put({it:varlist}) {ul:o}utput({it:varlist}) [{ul:h}idden({it:numlist})] [{ul:s}pread({it:default = 0.25})]  [{ul:r}aw | {ul:n}onorm]{break}
 defines the structure of the neural network. Parameters to normalize the {hi:input} and {hi:output} variables between [0,1] are determined based on the 
-active data. The normalization will be skipped if option {hi:raw} or {hi:nonorm} are specified. {hi:raw} still tests that all {hi:input} and {hi:ouput} 
-variables are in the range of [0,1], while [hi:nonorm] just assumes already normalized data without verification. This is usefull, if only selected variables require 
+active data. The normalization will be skipped if options {hi:raw} or {hi:nonorm} are specified. {hi:raw} still tests that all {hi:input} and {hi:ouput} 
+variables are in the range of [0,1], while [hi:nonorm] just assumes already normalized data without verification. This is usefull, when only selected variables require 
 normalization (see command {hi:norm}). The {hi:hidden} layers can be omitted, leading to a simple perceptron. If specified, every number defines 
 a hidden layer of the corresponding size starting at the input layer. The starting values of the synapses are randomly distributed between
 [-{hi:spread}, +{hi:spread}]. 
 
 {p 0 4}{cmd:brain {ul:no}rm} {it:varlist}, [{ul:r}aw]{break}
 subsequently normalizes specified output and/or input variables separately after an initial definition with {cmd:define}. This is useful to normalize only specific variables, while other
-variables, e.g. interdependent shares summing up to 1, stay {hi:raw} and vice versa. The varlist {hi:*} can be specified to normalize the whole network.
+variables, e.g. interdependent shares summing up to 1, stay {hi:raw} and vice versa. The varlist {hi:*} can be specified to normalize the whole network. Of course, normalization can be 
+performed externally without using the brain normalization, but keep in mind, that it has to be consistent for predictions beyond the training data. The {hi:input} and {hi:output} matrices
+contain the internal normalization parameters. 
 
 {p 0 4}{cmd:brain {ul:re}set}, [{ul:s}pread({it:default = 0.25})]{break}
-the weights of an existing network ({hi:brain} matrix) are initialized according to the {hi:spread} parameter nullifying all training efforts.
+the weights of an existing network ({hi:brain} matrix) are re-initialized according to the {hi:spread} parameter nullifying all training efforts.
 
 {p 0 4}{cmd:brain {ul:sa}ve} {it:filename}{break}
 save the neural network matrizes into a file. Default postfix is ".brn".
