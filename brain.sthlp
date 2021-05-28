@@ -147,6 +147,18 @@ r({hi:Fprecision}) precision for false: TN/(TN+FN){break}
 r({hi:accuracy}) accurary: (TP+TN)/(TP+TN+FP+FN){break}
 r({hi:threshold}) threshold for binary one
 
+{title:Normalization}
+
+{p}An Artificial Neural Network (ANN) simulates very roughly the signal processing in the brain. Therefore, it is essential that all 
+signals passing through the brain matrix have a limited strength to prevent overloading. In this implementation, the signals are always 
+in the range between 0 and 1. During the definition of the brain with the command {cmd:define}, the {hi:input} and {hi:output} matrices 
+contain  normalization parameters based on the active training data to provide appropriate normalization not only for training but also 
+for later predictions. Sometimes, data is already within the valid range, which can be declared with the parameter {cmd:raw} during 
+definition. If only specific variables require normalization, it can be skipped with the parameter {cmd:nonorm}. The command {cmd:norm} 
+allows for subsequent normalizations of groups of variables to enable a mix of normalized and raw variables. Skipping normalization is 
+only required, if variables are interdependent and a column wise normalization may distort those row wise relations, i.e. shares. In 
+those cases, the column wise normalization has to be provided by the user.{p_end}
+
 {title:Compatibility and Multiprocessing}
 
 {p}Except for the {cmd:margin} and {cmd:signal} commands {hi:brain} fully supports older STATA Versions (tested for STATA 13). The before mentioned commands still work for older version
