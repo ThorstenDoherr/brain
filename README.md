@@ -17,6 +17,9 @@ NOTICE: The MAC plugin is not yet tested.
 
 ## Version history
 
+2023.05.12
+* Recompiled and tested the MAC plugin on a M1 machine (still no MP support for MAC). 
+
 2021.05.18
 * The new **norm** command allows for specific normalization of groups of variables.
 * The **nonorm** option of the **define** command skips normalization and testing.
