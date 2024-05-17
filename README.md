@@ -16,6 +16,9 @@ The **brain.c** source code contains MP support, while **brainsp.c** renounces a
 NOTICE: The MAC plugin is not yet tested.
 
 ## Version history
+2024.05.17
+* Correction of the help file pertaining the "brain fit" command
+* small improvements of the code examples in the help file
 
 2023.05.12
 * Recompiled and tested the MAC plugin on a M1 machine (still no MP support for MAC). 
